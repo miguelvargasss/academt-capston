@@ -1,0 +1,458 @@
+<div class="space-y-8 animate-fadeIn">
+  @if (error()) {
+    <div
+      class="p-4 border border-red-200 bg-red-50 text-red-800 rounded-xl text-xs flex justify-between gap-4"
+      role="alert"
+    >
+      <span>{{ error() }}</span
+      ><button class="underline font-semibold" (click)="load()" [disabled]="loading()">
+        Reintentar
+      </button>
+    </div>
+  }
+  <!-- Banner de Bienvenida -->
+  <div
+    class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 md:p-8 rounded-2xl border border-app-border shadow-card"
+  >
+    <div>
+      <div
+        class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-soft text-primary-dark text-xs font-semibold mb-2"
+      >
+        <span>Ciclo Académico 2026</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+        <span>Plataforma LMS</span>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-bold text-text-main tracking-tight">
+        ¡Bienvenido(a), {{ currentUser()?.fullName || 'Usuario' }}! 👋
+      </h1>
+      <p class="text-sm text-text-secondary mt-1 max-w-2xl">
+        @if (userRole() === 'DOCENTE') {
+          Tienes
+          <span class="font-semibold text-primary">{{ todayClasses().length }} sesión(es)</span> que
+          dictar hoy y gestionas
+          <span class="font-semibold text-emerald-600"
+            >{{ metrics()?.completedTasksCount ?? '—' }} alumno(s)</span
+          >
+          inscritos en tus cursos.
+        } @else {
+          Tienes
+          <span class="font-semibold text-primary">{{ todayClasses().length }} clase(s)</span>
+          programadas para hoy y tu asistencia promedio se mantiene en
+          <span class="font-semibold text-emerald-600">{{ metrics()?.attendanceRate ?? '—' }}%</span
+          >.
+        }
+      </p>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="flex items-center gap-3">
+      <a
+        routerLink="/courses"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:bg-primary-dark text-white text-xs font-semibold shadow-sm transition-all"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+        </svg>
+        <span>{{ userRole() === 'DOCENTE' ? 'Mis Cursos Asignados' : 'Explorar Cursos' }}</span>
+      </a>
+
+      <a
+        routerLink="/calendar"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-app-border hover:bg-app-bg text-text-main text-xs font-semibold transition-all bg-white"
+      >
+        <svg
+          class="w-4 h-4 text-text-secondary"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect width="18" height="18" x="3" y="4" rx="2" />
+          <line x1="16" x2="16" y1="2" y2="6" />
+          <line x1="8" x2="8" y1="2" y2="6" />
+          <line x1="3" x2="21" y1="10" y2="10" />
+        </svg>
+        <span>{{ userRole() === 'DOCENTE' ? 'Agenda de Clases' : 'Mi Horario' }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Métricas Principales (Grid de 4 Cards con Design Tokens) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <!-- Card 1: Cursos -->
+    <div
+      class="bg-white p-6 rounded-2xl border border-app-border shadow-card hover:border-primary/30 transition-all group"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-xs font-medium text-text-secondary">{{
+          userRole() === 'DOCENTE' ? 'Cursos de la academia' : 'Cursos Inscritos'
+        }}</span>
+        <div
+          class="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center group-hover:scale-105 transition-transform"
+        >
+          <svg class="w-5 h-5 stroke-[1.8]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+            <path d="M6 6h10" />
+          </svg>
+        </div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-bold text-text-main">{{
+          metrics()?.enrolledCoursesCount ?? '—'
+        }}</span>
+        <span class="text-xs text-text-muted">{{
+          userRole() === 'DOCENTE' ? 'cursos creados' : 'cursos matriculados'
+        }}</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Promedio -->
+    <div
+      class="bg-white p-6 rounded-2xl border border-app-border shadow-card hover:border-primary/30 transition-all group"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-xs font-medium text-text-secondary">{{
+          userRole() === 'DOCENTE' ? 'Promedio del Grupo' : 'Promedio Académico'
+        }}</span>
+        <div
+          class="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center group-hover:scale-105 transition-transform"
+        >
+          <svg class="w-5 h-5 stroke-[1.8]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="8" r="6" />
+            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
+          </svg>
+        </div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-bold text-text-main">{{ metrics()?.averageGrade ?? '—' }}</span>
+        <span class="text-xs text-text-muted">/ 100 pts</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Tareas o Estudiantes -->
+    <div
+      class="bg-white p-6 rounded-2xl border border-app-border shadow-card hover:border-primary/30 transition-all group"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-xs font-medium text-text-secondary">{{
+          userRole() === 'DOCENTE' ? 'Alumnos a Cargo' : 'Tareas Entregadas'
+        }}</span>
+        <div
+          class="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center group-hover:scale-105 transition-transform"
+        >
+          @if (userRole() === 'DOCENTE') {
+            <svg class="w-5 h-5 stroke-[1.8]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          } @else {
+            <svg class="w-5 h-5 stroke-[1.8]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </svg>
+          }
+        </div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-bold text-text-main">{{
+          metrics()?.completedTasksCount ?? '—'
+        }}</span>
+        <span class="text-xs text-text-muted">{{
+          userRole() === 'DOCENTE' ? 'alumnos matriculados' : 'entregas registradas'
+        }}</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Asistencia -->
+    <div
+      class="bg-white p-6 rounded-2xl border border-app-border shadow-card hover:border-primary/30 transition-all group"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <span class="text-xs font-medium text-text-secondary">{{
+          userRole() === 'DOCENTE' ? 'Asistencia del Aula' : 'Asistencia Global'
+        }}</span>
+        <div
+          class="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center group-hover:scale-105 transition-transform"
+        >
+          <svg class="w-5 h-5 stroke-[1.8]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <polyline points="16 11 18 13 22 9" />
+          </svg>
+        </div>
+      </div>
+      <div class="flex items-baseline gap-2">
+        <span class="text-3xl font-bold text-text-main"
+          >{{ metrics()?.attendanceRate ?? '—' }}%</span
+        >
+        <span class="text-xs text-text-muted">promedio</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección Intermedia: Gráfico de Horas de Estudio y Clases de Hoy -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Gráfico de Estudio Semanal (2 columnas) -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-app-border shadow-card">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-base font-bold text-text-main">Rendimiento y Dedicación Semanal</h2>
+          <p class="text-xs text-text-secondary">
+            Horas de práctica de Listening, Speaking y ejercicios en plataforma
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-md bg-primary"></span>
+          <span class="text-xs font-medium text-text-secondary">Horas estudiadas</span>
+        </div>
+      </div>
+
+      <!-- Gráfico de Barras Moderno Estilo SaaS -->
+      <div class="pt-4 pb-2">
+        <div
+          class="grid grid-cols-7 gap-3 sm:gap-6 items-end h-48 sm:h-56 px-2 border-b border-app-border"
+        >
+          @for (item of weeklyStudyData; track item.day) {
+            <div class="flex flex-col items-center gap-2 h-full justify-end group">
+              <!-- Tooltip en hover -->
+              <div
+                class="opacity-0 group-hover:opacity-100 transition-opacity bg-sidebar text-white text-[11px] py-1 px-2 rounded-md shadow-md pointer-events-none whitespace-nowrap mb-1"
+              >
+                {{ item.hours }} hrs
+              </div>
+              <!-- Barra interactiva -->
+              <div
+                class="w-full max-w-[42px] bg-primary-soft rounded-t-xl relative overflow-hidden flex flex-col justify-end group-hover:bg-primary/20 transition-all"
+                [style.height.%]="item.percentage"
+              >
+                <div
+                  class="w-full bg-primary rounded-t-xl transition-all duration-500"
+                  [style.height.%]="item.percentage"
+                ></div>
+              </div>
+              <!-- Día de la semana -->
+              <span
+                class="text-xs font-medium text-text-secondary group-hover:text-text-main mt-1"
+                >{{ item.day }}</span
+              >
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Métricas complementarias al pie del gráfico -->
+      <div class="grid grid-cols-3 gap-4 pt-5 mt-2 border-t border-app-border-subtle text-center">
+        <div>
+          <span class="text-xs text-text-muted">Total esta semana</span>
+          <p class="text-sm font-bold text-text-main mt-0.5">
+            {{ metrics()?.studyHoursThisWeek ?? '—' }} horas
+          </p>
+        </div>
+        <div>
+          <span class="text-xs text-text-muted">Tareas pendientes</span>
+          <p class="text-sm font-bold text-text-main mt-0.5">{{ upcomingTasks().length }}</p>
+        </div>
+        <div>
+          <span class="text-xs text-text-muted">Asistencia</span>
+          <p class="text-sm font-bold text-emerald-600 mt-0.5">
+            {{ metrics()?.attendanceRate ?? '—' }}%
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clases de Hoy (1 columna) -->
+    <div
+      class="bg-white p-6 rounded-2xl border border-app-border shadow-card flex flex-col justify-between"
+    >
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-text-main">Clases de Hoy</h2>
+          <app-badge variant="soft">Hoy</app-badge>
+        </div>
+
+        <div class="space-y-4">
+          @for (cls of todayClasses(); track cls.id) {
+            <div
+              class="p-4 rounded-xl border border-app-border bg-[#FAFAF8] hover:border-primary/40 transition-colors"
+            >
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="text-xs font-semibold text-primary uppercase tracking-wide">{{
+                  cls.courseTitle
+                }}</span>
+                @if (cls.isLiveNow) {
+                  <span
+                    class="flex items-center gap-1 text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full border border-red-200"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping"></span>
+                    AHORA
+                  </span>
+                }
+              </div>
+
+              <h3 class="text-sm font-bold text-text-main line-clamp-1">{{ cls.title }}</h3>
+
+              <div class="flex items-center gap-3 text-xs text-text-secondary mt-2">
+                <span class="flex items-center gap-1">
+                  <svg
+                    class="w-3.5 h-3.5 text-text-muted"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  {{ cls.timeRange }}
+                </span>
+                <span>&middot;</span>
+                <span>{{ cls.teacherName }}</span>
+              </div>
+
+              @if (cls.roomOrMeetUrl) {
+                <a
+                  [href]="cls.roomOrMeetUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="mt-3.5 w-full py-2 px-3 rounded-lg bg-primary hover:bg-primary-hover active:bg-primary-dark text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-xs"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polygon points="23 7 16 12 23 17 23 7" />
+                    <rect width="14" height="12" x="1" y="6" rx="2" />
+                  </svg>
+                  <span>Entrar a la Sala Virtual</span>
+                </a>
+              }
+            </div>
+          } @empty {
+            <div class="py-8 text-center text-xs text-text-secondary">
+              <svg
+                class="w-8 h-8 text-text-muted mx-auto mb-2 stroke-[1.5]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <p class="font-medium text-text-main">No hay clases programadas para hoy</p>
+              <p class="text-text-muted text-[11px] mt-0.5">
+                Tus próximas sesiones aparecerán aquí.
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-app-border-subtle mt-4 text-center">
+        <a routerLink="/calendar" class="text-xs text-primary font-semibold hover:underline">
+          Ver todas las clases del calendario &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección Inferior: Tareas y Evaluaciones -->
+  <div class="bg-white p-6 rounded-2xl border border-app-border shadow-card">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="text-base font-bold text-text-main">
+          {{
+            userRole() === 'DOCENTE'
+              ? 'Tareas y Evaluaciones Asignadas'
+              : 'Entregas y Actividades Pendientes'
+          }}
+        </h2>
+        <p class="text-xs text-text-secondary">
+          {{
+            userRole() === 'DOCENTE'
+              ? 'Supervisa las actividades y entregas de tus estudiantes'
+              : 'Asegúrate de enviar tus tareas antes de la fecha límite'
+          }}
+        </p>
+      </div>
+      <app-badge variant="outline">
+        {{ upcomingTasks().length }} {{ userRole() === 'DOCENTE' ? 'en revisión' : 'por entregar' }}
+      </app-badge>
+    </div>
+
+    <div class="divide-y divide-app-border">
+      @for (task of upcomingTasks(); track task.id) {
+        <div
+          class="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 first:pt-0 last:pb-0"
+        >
+          <div class="flex items-start gap-3">
+            <div
+              class="w-8 h-8 rounded-lg bg-primary-soft text-primary-dark flex items-center justify-center flex-shrink-0 mt-0.5"
+            >
+              <svg class="w-4 h-4 stroke-[2]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" x2="8" y1="13" y2="13" />
+                <line x1="16" x2="8" y1="17" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-text-main">{{ task.title }}</h3>
+              <div class="flex items-center gap-2 text-xs text-text-muted mt-0.5">
+                <span>{{ task.courseTitle }}</span>
+                <span>&middot;</span>
+                <span [class.text-primary]="task.isUrgent" [class.font-semibold]="task.isUrgent">
+                  Vence: {{ task.dueDate }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-auto">
+            @if (task.isUrgent) {
+              <app-badge variant="soft">Urgente</app-badge>
+            }
+            <button
+              class="px-3 py-1.5 rounded-lg border border-app-border hover:bg-app-bg text-text-main text-xs font-semibold transition-colors cursor-pointer"
+            >
+              {{ userRole() === 'DOCENTE' ? 'Revisar Entregas' : 'Subir Archivo' }}
+            </button>
+          </div>
+        </div>
+      } @empty {
+        <div class="py-8 text-center text-xs text-text-secondary">
+          <svg
+            class="w-8 h-8 text-text-muted mx-auto mb-2 stroke-[1.5]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" x2="8" y1="13" y2="13" />
+            <line x1="16" x2="8" y1="17" y2="17" />
+          </svg>
+          <p class="font-medium text-text-main">
+            {{
+              userRole() === 'DOCENTE'
+                ? 'No hay tareas asignadas pendientes de revisión'
+                : 'No tienes tareas pendientes por entregar'
+            }}
+          </p>
+          <p class="text-text-muted text-[11px] mt-0.5">
+            {{
+              userRole() === 'DOCENTE'
+                ? 'Todas las actividades de tus cursos están al día.'
+                : '¡Estás al día con tus actividades!'
+            }}
+          </p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,87 @@
+<dialog #dialog id="enroll-modal" aria-labelledby="enroll-title" (cancel)="cancel($event)">
+  <div class="dialog-shell">
+    <header>
+      <div>
+        <p class="eyebrow">MATRICULACIÓN MULTICURSO</p>
+        <h2 id="enroll-title">Gestionar cursos</h2>
+        <p class="subtitle">{{ student().fullName }}</p>
+      </div>
+      <button class="close" aria-label="Cerrar matrículas" [disabled]="busy()" (click)="cancel()">
+        ×
+      </button>
+    </header>
+    <div class="body">
+      @if (error()) {
+        <div class="error" role="alert">{{ error() }}</div>
+      }
+      <p class="help intro">
+        Selecciona los cursos que debe tener asignados. Al retirar uno, sus entregas y
+        calificaciones se conservan en el historial.
+      </p>
+      <label class="search"
+        ><app-course-icon name="search" /><input
+          aria-label="Buscar cursos disponibles"
+          placeholder="Buscar curso, nivel o referencia…"
+          [value]="query()"
+          (input)="search($event)"
+      /></label>
+      <div class="course-list">
+        @for (course of filtered(); track course.id) {
+          <label class="course-option" [class.selected]="selected().has(course.id)"
+            ><input
+              type="checkbox"
+              [checked]="selected().has(course.id)"
+              [disabled]="
+                busy() ||
+                (!current().has(course.id) && !selected().has(course.id) && !available(course))
+              "
+              (change)="toggle(course.id)"
+            />
+            <div class="course-info">
+              <strong>{{ course.title }}</strong
+              ><small
+                >{{ course.level }} · Referencia {{ course.id | slice: 0 : 8 }} ·
+                {{ statusLabels[course.status] }}</small
+              ><small>{{ course.enrolled }} / {{ course.capacity }} cupos ocupados</small>
+            </div>
+            <div class="badges">
+              @if (current().has(course.id) && selected().has(course.id)) {
+                <span class="tag green">Inscrito</span>
+              } @else if (current().has(course.id)) {
+                <span class="tag orange">Por retirar</span>
+              } @else if (selected().has(course.id)) {
+                <span class="tag orange">Por inscribir</span>
+              } @else if (!available(course)) {
+                <span class="tag">{{
+                  course.status === 'ACTIVO' ? 'Sin cupos' : 'No disponible'
+                }}</span>
+              }
+            </div></label
+          >
+        } @empty {
+          <div class="empty">
+            {{
+              query()
+                ? 'No hay cursos que coincidan.'
+                : 'Todavía no hay cursos creados en la academia.'
+            }}
+          </div>
+        }
+      </div>
+      <p class="help">
+        {{ added() }} por inscribir · {{ removed() }} por retirar. Solo se pueden asignar cursos
+        activos con cupos disponibles.
+      </p>
+    </div>
+    <footer>
+      <button class="btn" [disabled]="busy()" (click)="cancel()">Cancelar</button
+      ><button
+        class="btn primary"
+        [disabled]="busy() || (!added() && !removed())"
+        (click)="submit()"
+      >
+        {{ busy() ? 'Guardando…' : 'Guardar cambios' }}
+      </button>
+    </footer>
+  </div>
+</dialog>

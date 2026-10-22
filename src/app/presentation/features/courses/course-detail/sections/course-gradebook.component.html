@@ -1,0 +1,255 @@
+@let data = workspace();
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">EL CICLO DE APRENDIZAJE</p>
+    <h2>{{ canManage() ? 'Libro de calificaciones' : 'Mis calificaciones' }}</h2>
+    <p class="subtitle">
+      {{
+        canManage()
+          ? 'Cada alumno, cada actividad y su estado de entrega.'
+          : 'Revisa tus actividades, notas y comentarios del docente.'
+      }}
+    </p>
+  </div>
+  @if (canManage()) {
+    <button
+      class="btn"
+      [disabled]="busy() || !tasks().length || !data.students.length"
+      (click)="edit.emit({ mode: 'SUBMISSION' })"
+    >
+      <app-course-icon name="plus" />Registrar entrega
+    </button>
+  }
+</div>
+@if (canManage() && tasks().length) {
+  <div class="grid grid-cols-3 gap-3 mb-5">
+    <div class="summary">
+      <span>Actividades</span><strong>{{ tasks().length }}</strong>
+    </div>
+    <div class="summary">
+      <span>Entregas registradas</span><strong>{{ data.submissions.length }}</strong>
+    </div>
+    <div class="summary">
+      <span>Calificadas</span><strong class="text-primary">{{ graded() }}</strong>
+    </div>
+  </div>
+  <div class="flex gap-3 mb-4 flex-wrap">
+    <label class="search flex-1 min-w-48"
+      ><app-course-icon name="search" /><input
+        aria-label="Buscar alumnos en el libro"
+        placeholder="Buscar alumno o correo…"
+        [value]="query()"
+        (input)="search($event)" /></label
+    ><select
+      class="bg-white border border-app-border rounded-xl px-3 py-2 text-xs max-w-full"
+      aria-label="Filtrar actividad"
+      [value]="activityId()"
+      (change)="selectActivity($event)"
+    >
+      <option value="ALL">Todas las actividades</option>
+      @for (task of tasks(); track task.id) {
+        <option [value]="task.id">{{ task.title }}</option>
+      }
+    </select>
+  </div>
+  <label class="flex items-center gap-2 text-text-secondary mb-4"
+    ><input
+      type="checkbox"
+      [checked]="showWithdrawn()"
+      (change)="showWithdrawn.set(!showWithdrawn())"
+    />Incluir alumnos retirados</label
+  >
+  <div class="gradebook-wrap">
+    <table class="gradebook">
+      <thead>
+        <tr>
+          <th class="student-col">Alumno</th>
+          @for (task of visibleTasks(); track task.id) {
+            <th>
+              <strong>{{ task.title }}</strong
+              ><small
+                >{{ task.maxScore }} pts ·
+                {{
+                  task.activityType === 'QUIZ'
+                    ? 'Quiz'
+                    : task.activityType === 'EVALUACION'
+                      ? 'Evaluación'
+                      : 'Tarea'
+                }}</small
+              >
+              @if (task.dueAt) {
+                <small>{{ task.dueAt | date: 'dd/MM, HH:mm' }}</small>
+              }
+              @if (!task.published) {
+                <span class="tag tag-orange mt-1">Borrador</span>
+              }
+            </th>
+          }
+          <th>Nota final</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (student of students(); track student.id) {
+          <tr>
+            <th class="student-col">
+              <strong>{{ student.name }}</strong
+              ><small>{{ student.email }}</small>
+              @if (student.status === 'ABANDONADA') {
+                <span class="tag">Retirado</span>
+              }
+            </th>
+            @for (task of visibleTasks(); track task.id) {
+              @let delivery = submission(student, task);
+              <td>
+                <button
+                  class="grade-cell"
+                  [class.graded]="delivery?.status === 'CALIFICADA'"
+                  [class.overdue]="status(task, delivery) === 'Vencido'"
+                  [disabled]="busy() || !delivery"
+                  (click)="review(task, delivery)"
+                  [attr.aria-label]="
+                    student.name + ' · ' + task.title + ' · ' + status(task, delivery)
+                  "
+                >
+                  @if (delivery?.grade !== null && delivery?.grade !== undefined) {
+                    <strong
+                      >{{ delivery?.grade }}<span> / {{ task.maxScore }}</span></strong
+                    >
+                  }
+                  <small>{{ status(task, delivery) }}</small>
+                </button>
+              </td>
+            }
+            <td>
+              <strong>{{ student.grade !== null ? (student.grade | number: '1.0-2') : '—' }}</strong
+              ><small>/ 100</small>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td
+              [attr.colspan]="visibleTasks().length + 2"
+              class="p-8 text-center text-text-secondary"
+            >
+              No hay alumnos que mostrar con este filtro.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  @if (activityId() !== 'ALL') {
+    @for (task of visibleTasks(); track task.id) {
+      <section class="mt-6">
+        <h3 class="font-bold text-sm mb-3">Revisión de {{ task.title }}</h3>
+        <div class="space-y-3">
+          @for (student of students(); track student.id) {
+            @let delivery = submission(student, task);
+            <article class="bg-white border border-app-border rounded-xl p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h4 class="font-semibold">{{ student.name }}</h4>
+                  <span class="tag mt-1" [class.tag-green]="delivery?.status === 'CALIFICADA'">{{
+                    status(task, delivery)
+                  }}</span>
+                </div>
+                @if (delivery) {
+                  <button class="btn" [disabled]="busy()" (click)="review(task, delivery)">
+                    {{ delivery.status === 'CALIFICADA' ? 'Revisar nota' : 'Calificar' }}
+                  </button>
+                }
+              </div>
+              @if (delivery) {
+                @if (delivery.submittedAt) {
+                  <p class="text-text-muted text-[11px] mt-3">
+                    Enviado: {{ delivery.submittedAt | date: 'dd/MM/yyyy, HH:mm' }}
+                  </p>
+                }
+                @if (safeUrl(delivery.fileUrl); as url) {
+                  <app-file-attachment [url]="url" label="Abrir archivo de la entrega" />
+                }
+                @if (delivery.textContent) {
+                  <p
+                    class="whitespace-pre-wrap text-text-secondary text-xs leading-relaxed mt-3 line-clamp-4"
+                  >
+                    {{ delivery.textContent }}
+                  </p>
+                }
+                @if (delivery.feedback) {
+                  <div class="feedback">
+                    <strong>Retroalimentación</strong>
+                    <p>{{ delivery.feedback }}</p>
+                  </div>
+                }
+              }
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+  <p class="text-text-muted text-[11px] mt-4 leading-relaxed">
+    Haz clic en una entrega para revisarla. La nota final se normaliza a 100; los recursos sin
+    publicar no generan una obligación de entrega para el alumno.
+  </p>
+} @else if (!canManage()) {
+  <div class="space-y-3">
+    @for (task of tasks(); track task.id) {
+      @let delivery = ownSubmission(task);
+      <article class="bg-white border border-app-border rounded-2xl p-5">
+        <div class="flex justify-between gap-3 items-start">
+          <div>
+            <span
+              class="tag"
+              [class.tag-green]="delivery?.status === 'CALIFICADA'"
+              [class.tag-red]="status(task, delivery) === 'Vencido'"
+              >{{ status(task, delivery) }}</span
+            >
+            <h3 class="font-bold text-sm mt-3">{{ task.title }}</h3>
+            <p class="text-text-secondary mt-1">
+              {{ task.maxScore }} puntos
+              @if (task.dueAt) {
+                · Fecha límite {{ task.dueAt | date: 'dd/MM/yyyy, HH:mm' }}
+              }
+            </p>
+          </div>
+          <div class="text-right">
+            @if (delivery?.grade !== null && delivery?.grade !== undefined) {
+              <strong class="text-xl text-primary">{{ delivery?.grade }}</strong
+              ><small class="block text-text-muted">/ {{ task.maxScore }}</small>
+            }
+          </div>
+        </div>
+        @if (delivery?.feedback) {
+          <div class="feedback">
+            <strong>Retroalimentación del docente</strong>
+            <p>{{ delivery?.feedback }}</p>
+            <small
+              >{{ delivery?.graderName }} ·
+              {{ delivery?.gradedAt | date: 'dd/MM/yyyy, HH:mm' }}</small
+            >
+          </div>
+        }
+        <button class="btn mt-4" (click)="view.emit(task)">
+          {{ delivery?.status === 'CALIFICADA' ? 'Ver entrega' : 'Abrir actividad' }}
+        </button>
+      </article>
+    } @empty {
+      <div class="empty">
+        <span class="empty-icon"><app-course-icon name="task" /></span>
+        <h3>Aún no hay actividades publicadas</h3>
+        <p>Las tareas y evaluaciones que publique tu docente aparecerán aquí.</p>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="empty">
+    <span class="empty-icon"><app-course-icon name="task" /></span>
+    <h3>El libro se construye con tus actividades</h3>
+    <p>
+      Añade tareas, evaluaciones o quizzes en Contenido. Aquí aparecerá cada alumno, haya entregado
+      o no.
+    </p>
+    <button class="btn btn-primary" (click)="contentRequested.emit()">Ir a Contenido</button>
+  </div>
+}

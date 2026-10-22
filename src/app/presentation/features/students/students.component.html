@@ -1,0 +1,287 @@
+<div class="pb-8">
+  <header class="flex flex-wrap items-start sm:items-center justify-between gap-4 mb-7">
+    <div>
+      <p class="text-[10px] tracking-widest font-bold text-text-muted mb-2">
+        DOCENTES · COMUNIDAD ACADÉMICA
+      </p>
+      <h1 class="text-3xl font-bold tracking-tight">Alumnos</h1>
+      <p class="text-xs text-text-secondary mt-2">
+        Gestiona las cuentas, los accesos y las matrículas de la academia.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button
+        class="btn"
+        [disabled]="busy() || loading()"
+        (click)="load()"
+        aria-label="Actualizar alumnos"
+      >
+        <app-course-icon name="refresh" /></button
+      ><button
+        id="open-create-student-btn"
+        class="btn primary"
+        [disabled]="busy()"
+        (click)="open({ mode: 'CREATE' })"
+      >
+        <app-course-icon name="plus" />Nuevo alumno
+      </button>
+    </div>
+  </header>
+  @if (loadError()) {
+    <div
+      class="flex items-center gap-2 p-4 mb-4 rounded-xl border border-red-200 bg-red-50 text-xs text-red-800"
+      role="alert"
+    >
+      <span>{{ loadError() }}</span
+      ><button class="ml-auto font-semibold underline" (click)="load()">Reintentar</button>
+    </div>
+  }
+  @if (notice()) {
+    <div
+      class="flex items-center gap-2 p-4 mb-4 rounded-xl border border-green-200 bg-green-50 text-xs text-green-800"
+      role="status"
+    >
+      <app-course-icon name="check" />{{ notice() }}
+    </div>
+  }
+  @if (createdCard(); as created) {
+    <app-student-created-card [credentials]="created" (closed)="createdCard.set(null)" />
+  }
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" [attr.aria-busy]="loading()">
+    <div class="bg-white border border-app-border rounded-2xl p-5">
+      <p class="text-xs text-text-secondary">Total de alumnos</p>
+      <strong class="block text-3xl font-bold my-2">{{ loaded() ? total() : '—' }}</strong
+      ><small class="text-[11px] text-text-muted">Cuentas de estudiantes</small>
+    </div>
+    <div class="bg-white border border-app-border rounded-2xl p-5">
+      <p class="text-xs text-text-secondary">Con acceso activo</p>
+      <strong class="block text-3xl font-bold my-2">{{ loaded() ? active() : '—' }}</strong
+      ><small class="text-[11px] text-text-muted">Acceso habilitado a la plataforma</small>
+    </div>
+    <div class="bg-white border border-app-border rounded-2xl p-5">
+      <p class="text-xs text-text-secondary">En seguimiento</p>
+      <strong class="block text-3xl font-bold my-2 text-amber-700">{{
+        loaded() ? atRisk() : '—'
+      }}</strong
+      ><small class="text-[11px] text-text-muted">Alumnos con una matrícula en riesgo</small>
+    </div>
+  </div>
+  <section class="directory" aria-label="Directorio de alumnos">
+    <div class="toolbar">
+      <label class="search"
+        ><app-course-icon name="search" /><input
+          type="search"
+          aria-label="Buscar alumnos por nombre o correo"
+          placeholder="Buscar por nombre o correo…"
+          [value]="query()"
+          (input)="search($event)" /></label
+      ><span class="directory-label">DIRECTORIO DE LA ACADEMIA</span>
+    </div>
+    <nav class="filters" aria-label="Filtrar alumnos por estado">
+      @for (item of filters; track item.id) {
+        <button
+          [class.selected]="filter() === item.id"
+          [attr.aria-pressed]="filter() === item.id"
+          (click)="filter.set(item.id)"
+        >
+          @if (item.id !== 'TODOS') {
+            <span
+              class="status-dot"
+              [class.green]="item.id === 'ACTIVO'"
+              [class.yellow]="item.id === 'RIESGO'"
+              [class.red]="item.id === 'SUSPENDIDO'"
+            ></span>
+          }
+          {{ item.label }}
+        </button>
+      }
+    </nav>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Alumno</th>
+            <th>Teléfono</th>
+            <th>Cursos</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (student of filtered(); track student.id) {
+            <tr [class.removing]="removingIds().has(student.id)">
+              <td>
+                <div class="student-identity">
+                  @if (avatar(student.avatarUrl); as url) {
+                    <img [src]="url" alt="" loading="lazy" />
+                  } @else {
+                    <span class="avatar">{{ initials(student.fullName) }}</span>
+                  }
+                  <div>
+                    <strong>{{ student.fullName }}</strong
+                    ><small>{{ student.email }}</small
+                    ><span class="joined">Alta {{ student.createdAt | date: 'dd/MM/yyyy' }}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="phone-cell">
+                {{ student.phone ? formatPhone(student.phone) : 'Sin teléfono' }}
+              </td>
+              <td>
+                <button
+                  class="course-count"
+                  [title]="courseNames(student) || 'Sin cursos asignados'"
+                  [disabled]="busy()"
+                  (click)="open({ mode: 'COURSES', id: student.id })"
+                >
+                  <app-course-icon name="book" />{{ enrolled(student) }}
+                  {{ enrolled(student) === 1 ? 'curso' : 'cursos' }}
+                </button>
+              </td>
+              <td>
+                <span
+                  class="status"
+                  [class.active]="student.status === 'ACTIVO' && !student.atRisk"
+                  [class.at-risk]="student.status === 'ACTIVO' && student.atRisk"
+                  [class.suspended]="student.status === 'SUSPENDIDO'"
+                  >{{
+                    student.status === 'ACTIVO' && student.atRisk
+                      ? 'En riesgo'
+                      : statusLabels[student.status]
+                  }}</span
+                >
+              </td>
+              <td>
+                <div class="row-actions">
+                  <button
+                    class="icon-btn"
+                    [disabled]="busy()"
+                    [attr.aria-label]="'Gestionar cursos de ' + student.fullName"
+                    title="Gestionar cursos"
+                    (click)="open({ mode: 'COURSES', id: student.id })"
+                  >
+                    <app-course-icon name="book" /></button
+                  ><button
+                    class="icon-btn"
+                    [disabled]="busy()"
+                    [attr.aria-label]="'Editar a ' + student.fullName"
+                    title="Editar alumno"
+                    (click)="open({ mode: 'EDIT', id: student.id })"
+                  >
+                    <app-course-icon name="edit" /></button
+                  ><button
+                    class="icon-btn danger"
+                    [disabled]="busy()"
+                    [attr.aria-label]="'Eliminar a ' + student.fullName"
+                    title="Eliminar alumno"
+                    (click)="open({ mode: 'DELETE', id: student.id })"
+                  >
+                    <app-course-icon name="trash" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5">
+                <div class="empty text-center px-4 py-12">
+                  @if (loading()) {
+                    <span role="status">Cargando alumnos…</span>
+                  } @else if (loadError()) {
+                    <h2 class="font-bold text-base">El directorio no está disponible</h2>
+                    <p>Reintenta la consulta para ver los datos reales.</p>
+                  } @else {
+                    <span
+                      class="inline-flex items-center justify-center bg-primary-soft text-primary w-12 h-12 rounded-2xl mb-4"
+                      ><app-course-icon name="users"
+                    /></span>
+                    <h2 class="font-bold text-base">
+                      {{ total() ? 'No encontramos coincidencias' : 'Tu comunidad empieza aquí' }}
+                    </h2>
+                    <p class="text-xs text-text-secondary mt-2 mb-4 mx-auto">
+                      {{
+                        total()
+                          ? 'Prueba con otro nombre, correo o estado.'
+                          : 'Crea la primera cuenta de alumno y asígnale sus cursos.'
+                      }}
+                    </p>
+                    @if (total()) {
+                      <button class="btn" (click)="query.set(''); filter.set('TODOS')">
+                        Limpiar filtros
+                      </button>
+                    } @else {
+                      <button
+                        class="btn primary"
+                        [disabled]="busy()"
+                        (click)="open({ mode: 'CREATE' })"
+                      >
+                        Crear primer alumno
+                      </button>
+                    }
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <footer class="table-footer" aria-live="polite">
+      {{
+        loading() && !loaded()
+          ? 'Cargando directorio…'
+          : !loaded() && loadError()
+            ? 'Directorio no disponible'
+            : 'Mostrando ' + filtered().length + ' alumnos'
+      }}
+    </footer>
+  </section>
+  @if (editor(); as state) {
+    @switch (state.mode) {
+      @case ('CREATE') {
+        <app-student-form
+          [busy]="busy()"
+          [error]="actionError()"
+          (created)="create($event)"
+          (closed)="close()"
+        />
+      }
+      @case ('EDIT') {
+        @if (target(); as student) {
+          <app-student-form
+            [student]="student"
+            [busy]="busy()"
+            [error]="actionError()"
+            (updated)="update($event)"
+            (closed)="close()"
+          />
+        }
+      }
+      @case ('COURSES') {
+        @if (target(); as student) {
+          <app-student-enrollment
+            [student]="student"
+            [courses]="directory().courses"
+            [busy]="busy()"
+            [error]="actionError()"
+            (saved)="saveCourses($event)"
+            (closed)="close()"
+          />
+        }
+      }
+      @case ('DELETE') {
+        @if (target(); as student) {
+          <app-delete-confirm-modal
+            title="Eliminar alumno"
+            [name]="student.fullName"
+            description="Se eliminarán su cuenta, matrículas, entregas, calificaciones y registros personales asociados. Perderá el acceso a la academia."
+            [busy]="busy()"
+            [error]="actionError()"
+            (confirmed)="delete()"
+            (closed)="close()"
+          />
+        }
+      }
+    }
+  }
+</div>

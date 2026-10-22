@@ -1,0 +1,150 @@
+<dialog
+  #dialog
+  id="student-form-modal"
+  aria-labelledby="student-form-title"
+  (cancel)="cancel($event)"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <header>
+      <div>
+        <p class="eyebrow">GESTIÓN DE ALUMNOS</p>
+        <h2 id="student-form-title">{{ student() ? 'Editar alumno' : 'Nuevo alumno' }}</h2>
+        <p class="subtitle">
+          {{
+            student()
+              ? 'Actualiza sus datos y su acceso a la academia.'
+              : 'Crea su cuenta institucional para comenzar.'
+          }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="close"
+        aria-label="Cerrar formulario"
+        [disabled]="busy()"
+        (click)="cancel()"
+      >
+        ×
+      </button>
+    </header>
+    <div class="body">
+      @if (error()) {
+        <div class="error" role="alert">{{ error() }}</div>
+      }
+      <fieldset [disabled]="busy()" [inert]="busy()">
+        <label for="student-name">Nombre completo</label
+        ><input
+          id="student-name"
+          class="field"
+          formControlName="fullName"
+          autocomplete="name"
+          maxlength="200"
+          required
+          autofocus
+          [attr.aria-invalid]="invalid('fullName')"
+        />
+        @if (invalid('fullName')) {
+          <p class="field-error">Introduce el nombre completo del alumno.</p>
+        }
+        @if (student()) {
+          <label for="student-email">Correo electrónico</label
+          ><input
+            id="student-email"
+            class="field"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            maxlength="255"
+            required
+            [attr.aria-invalid]="invalid('email')"
+          />
+          @if (invalid('email')) {
+            <p class="field-error">Introduce un correo válido.</p>
+          }
+        } @else {
+          <label for="student-identifier">Correo institucional</label>
+          <div class="email-field">
+            <input
+              id="student-identifier"
+              formControlName="identifier"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="64"
+              placeholder="anamartinez"
+              required
+              [attr.aria-invalid]="invalid('identifier')"
+            /><span>@kellyacademy.com</span>
+          </div>
+          <p class="help">Escribe solo el identificador, sin espacios ni @.</p>
+          @if (invalid('identifier')) {
+            <p class="field-error">Usa letras, números, puntos, guiones o guion bajo.</p>
+          }
+        }
+        <label for="student-phone">Teléfono</label>
+        <div class="phone-field">
+          <span>+51</span
+          ><input
+            id="student-phone"
+            formControlName="phone"
+            type="tel"
+            inputmode="numeric"
+            autocomplete="tel-national"
+            placeholder="999 159 716"
+            (input)="format($event)"
+            required
+            [attr.aria-invalid]="invalid('phone')"
+          />
+        </div>
+        @if (invalid('phone')) {
+          <p class="field-error">El teléfono debe tener exactamente 9 dígitos.</p>
+        }
+        @if (!student()) {
+          <label for="student-password">Contraseña inicial</label>
+          <div class="password-field">
+            <input
+              id="student-password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="new-password"
+              minlength="8"
+              maxlength="72"
+              required
+              [attr.aria-invalid]="invalid('password')"
+            /><button
+              type="button"
+              [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              [attr.aria-pressed]="showPassword()"
+              (click)="showPassword.set(!showPassword())"
+            >
+              {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </div>
+          <p class="help">
+            Mínimo 8 caracteres. Podrás compartir los datos de acceso después de crear la cuenta.
+          </p>
+          @if (invalid('password')) {
+            <p class="field-error">La contraseña debe tener entre 8 y 72 caracteres.</p>
+          }
+        } @else {
+          <label for="student-status">Estado de la cuenta</label
+          ><select id="student-status" class="field" formControlName="status">
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+            <option value="SUSPENDIDO">Suspendido</option>
+          </select>
+          <p class="help">
+            Una cuenta inactiva o suspendida pierde el acceso a la plataforma, incluso con una
+            sesión abierta. El indicador “En riesgo” depende de sus matrículas.
+          </p>
+        }
+      </fieldset>
+    </div>
+    <footer>
+      <button type="button" class="btn" [disabled]="busy()" (click)="cancel()">Cancelar</button
+      ><button type="submit" class="btn primary" [disabled]="busy()">
+        {{ busy() ? 'Guardando…' : student() ? 'Guardar cambios' : 'Crear alumno' }}
+      </button>
+    </footer>
+  </form>
+</dialog>

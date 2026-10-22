@@ -1,0 +1,311 @@
+@let data = workspace();
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">EL RECORRIDO DE APRENDIZAJE</p>
+    <h2>Contenido del curso</h2>
+    <p class="subtitle">
+      {{ weeks().length }} semanas organizadas en {{ data.units.length }} módulos
+    </p>
+  </div>
+  @if (canManage()) {
+    <button class="btn btn-primary" (click)="edit.emit({ mode: 'UNIT' })" [disabled]="busy()">
+      <app-course-icon name="plus" />Nuevo módulo
+    </button>
+  }
+</div>
+@if (data.units.length) {
+  <label class="search mb-6"
+    ><app-course-icon name="search" /><input
+      aria-label="Buscar contenido del curso"
+      placeholder="Buscar semanas, materiales o actividades…"
+      [value]="query()"
+      (input)="search($event)"
+  /></label>
+}
+<div class="space-y-5">
+  @for (unit of filtered(); track unit.id) {
+    <section>
+      <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div class="flex gap-3 items-center min-w-0">
+          <span class="text-primary text-xs font-bold">{{ unit.number | number: '2.0-0' }}</span>
+          <div>
+            <h3 class="font-bold text-sm">{{ unit.title }}</h3>
+            @if (unit.description) {
+              <p class="text-text-secondary text-xs mt-1">{{ unit.description }}</p>
+            }
+          </div>
+        </div>
+        @if (canManage()) {
+          <div class="flex items-center gap-1">
+            <button
+              class="icon-btn"
+              [attr.aria-label]="'Editar módulo ' + unit.title"
+              (click)="edit.emit({ mode: 'UNIT', unit })"
+              [disabled]="busy()"
+            >
+              <app-course-icon name="edit" /></button
+            ><button
+              class="icon-btn danger"
+              [attr.aria-label]="'Eliminar módulo ' + unit.title"
+              title="Solo se pueden eliminar módulos vacíos"
+              [disabled]="busy() || !!unit.weeks.length"
+              (click)="edit.emit({ mode: 'DELETE', kind: 'UNIT', id: unit.id, title: unit.title })"
+            >
+              <app-course-icon name="trash" /></button
+            ><button class="btn" (click)="addWeek(unit)" [disabled]="busy()">
+              <app-course-icon name="plus" />Semana
+            </button>
+          </div>
+        }
+      </div>
+      <div class="space-y-3">
+        @for (week of unit.weeks; track week.id) {
+          <article
+            class="border border-app-border bg-white rounded-2xl overflow-hidden shadow-subtle"
+          >
+            <div class="flex items-center justify-between gap-3 p-4 sm:p-5">
+              <button
+                class="flex items-center gap-3 text-left min-w-0 flex-1"
+                (click)="toggle(week.id)"
+                [attr.aria-expanded]="isOpen(week.id)"
+                [attr.aria-controls]="'week-' + week.id"
+              >
+                <span
+                  class="h-11 w-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center font-bold shrink-0"
+                  >S{{ week.number }}</span
+                ><span class="min-w-0"
+                  ><span class="font-bold text-sm">{{ week.title }}</span>
+                  @if (week.isCurrent) {
+                    <span class="tag tag-green ml-2">Actual</span>
+                  }
+                  <small class="block text-text-secondary mt-1">{{
+                    canManage()
+                      ? publishedCount(week) + '/' + week.resources.length + ' publicados'
+                      : week.resources.length + ' recursos'
+                  }}</small></span
+                >
+              </button>
+              <div class="flex items-center gap-1">
+                @if (canManage()) {
+                  <button
+                    class="icon-btn"
+                    [attr.aria-label]="'Agregar recurso a ' + week.title"
+                    [disabled]="busy()"
+                    (click)="edit.emit({ mode: 'RESOURCE', week })"
+                  >
+                    <app-course-icon name="plus" />
+                  </button>
+                }
+                <button
+                  class="icon-btn transition-transform"
+                  [class.rotate-180]="isOpen(week.id)"
+                  [attr.aria-label]="(isOpen(week.id) ? 'Contraer ' : 'Expandir ') + week.title"
+                  (click)="toggle(week.id)"
+                >
+                  <app-course-icon name="chevron" />
+                </button>
+              </div>
+            </div>
+            <div [id]="'week-' + week.id" [hidden]="!isOpen(week.id)">
+              @if (week.description) {
+                <p class="text-text-secondary text-xs px-5 pb-4 whitespace-pre-line">
+                  {{ week.description }}
+                </p>
+              }
+              @for (resource of week.resources; track resource.id) {
+                <div
+                  class="border-t border-app-border-subtle flex items-center gap-3 px-4 py-4 sm:px-5 flex-wrap sm:flex-nowrap"
+                >
+                  <span
+                    class="w-9 h-9 bg-primary-soft text-primary rounded-xl flex items-center justify-center shrink-0"
+                    ><app-course-icon
+                      [name]="
+                        resource.kind === 'CLASS' || resource.materialType === 'VIDEO'
+                          ? 'video'
+                          : resource.kind === 'TASK'
+                            ? 'task'
+                            : 'file'
+                      "
+                  /></span>
+                  <button class="flex-1 min-w-0 text-left group" (click)="view.emit(resource)">
+                    <span class="font-semibold text-xs sm:text-sm group-hover:text-primary">{{
+                      resource.title
+                    }}</span
+                    ><small class="block text-text-secondary mt-1"
+                      >{{ resourceLabel(resource) }}
+                      @if (resource.materialType) {
+                        · {{ resource.materialType }}
+                      }
+                      @if (resource.maxScore) {
+                        · {{ resource.maxScore }} pts
+                      }
+                      @if (resource.dueAt) {
+                        · {{ resource.dueAt | date: 'dd/MM, HH:mm' }}
+                      }
+                    </small>
+                  </button>
+                  @if (canManage()) {
+                    <span
+                      class="tag"
+                      [class.tag-green]="resource.published && resource.visible"
+                      [class.tag-orange]="!resource.published"
+                      >{{
+                        !resource.published ? 'Borrador' : resource.visible ? 'Publicado' : 'Oculto'
+                      }}</span
+                    >
+                    <div class="flex items-center gap-1 ml-auto">
+                      <button
+                        class="icon-btn"
+                        [attr.aria-label]="
+                          (resource.visible ? 'Ocultar ' : 'Mostrar ') + resource.title
+                        "
+                        [title]="
+                          resource.visible ? 'Ocultar a los alumnos' : 'Mostrar a los alumnos'
+                        "
+                        [disabled]="busy()"
+                        (click)="change(resource, 'visible')"
+                      >
+                        <app-course-icon [name]="resource.visible ? 'eye' : 'hidden'" /></button
+                      ><button
+                        class="icon-btn"
+                        [attr.aria-label]="'Editar ' + resource.title"
+                        [disabled]="busy()"
+                        (click)="edit.emit({ mode: 'RESOURCE', week, resource })"
+                      >
+                        <app-course-icon name="edit" /></button
+                      ><button
+                        class="icon-btn danger"
+                        [attr.aria-label]="'Eliminar ' + resource.title"
+                        [disabled]="busy() || hasSubmissions(resource.id)"
+                        title="Las actividades con entregas conservan su historial"
+                        (click)="
+                          edit.emit({
+                            mode: 'DELETE',
+                            kind: resource.kind,
+                            id: resource.id,
+                            title: resource.title,
+                          })
+                        "
+                      >
+                        <app-course-icon name="trash" />
+                      </button>
+                      @if (!resource.published) {
+                        <button
+                          class="btn text-primary"
+                          [disabled]="busy()"
+                          (click)="change(resource, 'published')"
+                        >
+                          Publicar
+                        </button>
+                      }
+                    </div>
+                  } @else if (data.completedResourceIds?.includes(resource.id)) {
+                    <span class="tag tag-green"><app-course-icon name="check" />Completado</span>
+                  } @else {
+                    <button
+                      class="icon-btn"
+                      [attr.aria-label]="'Ver ' + resource.title"
+                      (click)="view.emit(resource)"
+                    >
+                      <app-course-icon name="external" />
+                    </button>
+                  }
+                </div>
+              } @empty {
+                <p
+                  class="py-8 text-center text-text-muted text-xs border-t border-app-border-subtle"
+                >
+                  Esta semana aún no tiene recursos.
+                </p>
+              }
+              @if (canManage()) {
+                <div
+                  class="px-4 py-3 sm:px-5 border-t border-app-border-subtle flex items-center justify-between gap-2 flex-wrap"
+                >
+                  <button
+                    class="inline-flex items-center gap-2 text-primary font-semibold"
+                    [disabled]="busy()"
+                    (click)="edit.emit({ mode: 'RESOURCE', week })"
+                  >
+                    <app-course-icon name="plus" />Agregar recurso a esta semana
+                  </button>
+                  <div class="flex items-center gap-1">
+                    @if (!week.isCurrent) {
+                      <button
+                        class="icon-btn"
+                        title="Marcar semana actual"
+                        [attr.aria-label]="'Marcar actual ' + week.title"
+                        [disabled]="busy()"
+                        (click)="currentWeek.emit(week)"
+                      >
+                        <app-course-icon name="check" />
+                      </button>
+                    }
+                    <button
+                      class="icon-btn"
+                      [attr.aria-label]="'Editar semana ' + week.title"
+                      [disabled]="busy()"
+                      (click)="edit.emit({ mode: 'WEEK', unit, week })"
+                    >
+                      <app-course-icon name="edit" /></button
+                    ><button
+                      class="icon-btn danger"
+                      [attr.aria-label]="'Eliminar semana ' + week.title"
+                      [disabled]="busy() || !!week.resources.length"
+                      title="Solo se pueden eliminar semanas vacías"
+                      (click)="
+                        edit.emit({ mode: 'DELETE', kind: 'WEEK', id: week.id, title: week.title })
+                      "
+                    >
+                      <app-course-icon name="trash" />
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </article>
+        } @empty {
+          <div
+            class="p-6 border border-dashed border-app-border rounded-xl text-center text-text-secondary"
+          >
+            <p>
+              {{
+                query() ? 'No hay semanas que coincidan.' : 'Este módulo todavía no tiene semanas.'
+              }}
+            </p>
+            @if (canManage() && !query()) {
+              <button class="btn mt-3" (click)="addWeek(unit)">Agregar primera semana</button>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  } @empty {
+    <div class="empty">
+      <span class="empty-icon"><app-course-icon name="book" /></span>
+      <h3>
+        {{
+          query()
+            ? 'No se encontraron resultados'
+            : canManage()
+              ? 'Tu curso empieza aquí'
+              : 'El contenido estará disponible aquí'
+        }}
+      </h3>
+      <p>
+        {{
+          query()
+            ? 'Prueba buscando otro título.'
+            : canManage()
+              ? 'Crea un módulo, añade sus semanas y prepara los materiales y actividades de aprendizaje.'
+              : 'Cuando tu docente publique los recursos del curso, podrás revisarlos y entregar tus actividades.'
+        }}
+      </p>
+      @if (canManage() && !query()) {
+        <button class="btn btn-primary" (click)="edit.emit({ mode: 'UNIT' })">
+          Crear primer módulo
+        </button>
+      }
+    </div>
+  }
+</div>

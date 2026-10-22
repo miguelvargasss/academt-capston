@@ -1,0 +1,408 @@
+<dialog
+  #dialog
+  aria-labelledby="course-editor-title"
+  (cancel)="cancel($event)"
+  (click)="backdrop($event)"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <header>
+      <div>
+        <p class="eyebrow">GESTIÓN DEL CURSO</p>
+        <h2 id="course-editor-title">{{ title }}</h2>
+        <p class="subtitle">{{ subtitle }}</p>
+      </div>
+      <button
+        type="button"
+        class="close"
+        aria-label="Cerrar formulario"
+        [disabled]="busy() || uploading()"
+        (click)="cancel()"
+      >
+        ×
+      </button>
+    </header>
+    <div class="form-body">
+      @if (error() || validationError()) {
+        <div class="error" role="alert">{{ validationError() || error() }}</div>
+      }
+      <fieldset [disabled]="busy() || uploading()">
+        @if (state().mode === 'REMOVE_STUDENT') {
+          <p>
+            ¿Quieres retirar a <strong>{{ removalName }}</strong> de este curso?
+          </p>
+          <p class="help">
+            Se cerrará su acceso al aula. Sus entregas y calificaciones se conservarán en el
+            historial.
+          </p>
+        } @else if (state().mode === 'DELETE') {
+          <p>
+            ¿Quieres eliminar <strong>{{ deletionTitle }}</strong
+            >?
+          </p>
+          <p class="help">
+            Esta acción no se puede deshacer. Si contiene elementos dependientes, el curso puede
+            requerir que los retires primero.
+          </p>
+        } @else if (state().mode === 'GRADE') {
+          @if (reviewSubmission; as submission) {
+            <div class="review-box">
+              <strong>Entrega del alumno</strong>
+              @if (submission.submittedAt) {
+                <p class="help">
+                  Enviada: {{ submission.submittedAt | date: 'dd/MM/yyyy, HH:mm' }}
+                  {{ submission.isLate ? ' · Fuera de plazo' : '' }}
+                </p>
+              }
+              @if (reviewUrl; as url) {
+                <app-file-attachment
+                  [url]="url"
+                  [preview]="true"
+                  label="Abrir archivo de respuesta"
+                />
+              }
+              @if (submission.textContent) {
+                <p class="submission-text">{{ submission.textContent }}</p>
+              }
+              @if (submission.gradedAt) {
+                <p class="help">
+                  Última revisión: {{ submission.gradedAt | date: 'dd/MM/yyyy, HH:mm' }} ·
+                  {{ submission.graderName }}
+                </p>
+              }
+            </div>
+          }
+          <label for="grade"
+            >Calificación <span class="help">(de 0 a {{ scoreLimit }})</span></label
+          >
+          <input
+            id="grade"
+            type="number"
+            formControlName="grade"
+            min="0"
+            [max]="scoreLimit"
+            step="0.01"
+            autofocus
+            required
+          />
+          <label for="feedback">Retroalimentación</label>
+          <textarea
+            id="feedback"
+            formControlName="feedback"
+            rows="4"
+            maxlength="2000"
+            placeholder="Comentarios para el estudiante"
+          ></textarea>
+        } @else if (state().mode === 'SUBMISSION') {
+          <label for="task">Tarea</label>
+          <select
+            id="task"
+            formControlName="taskId"
+            (change)="form.controls.studentId.setValue('')"
+            autofocus
+            required
+          >
+            <option value="">Selecciona una tarea</option>
+            @for (task of tasks; track task.id) {
+              <option [value]="task.id">{{ task.title }}</option>
+            }
+          </select>
+          <label for="student">Estudiante</label>
+          <select id="student" formControlName="studentId" required>
+            <option value="">Selecciona un estudiante</option>
+            @for (student of eligibleStudents; track student.id) {
+              <option [value]="student.id">{{ student.name }}</option>
+            }
+          </select>
+          <p class="help">
+            Solo aparecen alumnos activos que aún no tienen una entrega registrada para esta tarea.
+          </p>
+          <app-file-upload
+            [courseId]="workspace().course.id"
+            destination="ENTREGA"
+            [currentUrl]="form.controls.fileUrl.value"
+            [disabled]="busy()"
+            (busyChange)="uploading.set($event)"
+            (uploaded)="form.controls.fileUrl.setValue($event.url)"
+          />
+          <label for="submission-url">URL del archivo <span class="help">(opcional)</span></label>
+          <input
+            id="submission-url"
+            type="url"
+            formControlName="fileUrl"
+            maxlength="500"
+            placeholder="https://"
+          />
+          <p class="help">
+            Puedes registrar una entrega sin enlace para un trabajo realizado en clase o en equipo.
+          </p>
+        } @else {
+          @if (state().mode === 'RESOURCE') {
+            <label for="kind">Tipo de recurso</label>
+            <select id="kind" formControlName="kind" (change)="kindChanged()">
+              <option value="MATERIAL">Material de estudio</option>
+              <option value="CLASS">Clase o sesión en vivo</option>
+              <option value="TASK">Tarea o evaluación</option>
+            </select>
+          }
+          <div class="title-row" [class.with-number]="isNewStructure">
+            @if (isNewStructure) {
+              <div>
+                <label for="number">Número</label
+                ><input
+                  id="number"
+                  type="number"
+                  formControlName="number"
+                  min="1"
+                  step="1"
+                  required
+                />
+              </div>
+            }
+            <div>
+              <label for="title">Título</label
+              ><input
+                id="title"
+                formControlName="title"
+                maxlength="200"
+                autofocus
+                required
+                placeholder="Escribe el título"
+              />
+            </div>
+          </div>
+          @if (state().mode === 'ANNOUNCEMENT') {
+            <label>Mensaje para los alumnos</label>
+            <app-rich-text-editor formControlName="body" />
+            <label>Imagen del anuncio <span class="help">(opcional)</span></label>
+            <app-file-upload
+              [courseId]="workspace().course.id"
+              destination="ANUNCIO"
+              [currentUrl]="form.controls.imageUrl.value"
+              [imagesOnly]="true"
+              [disabled]="busy()"
+              (busyChange)="uploading.set($event)"
+              (uploaded)="form.controls.imageUrl.setValue($event.url)"
+            />
+            @if (form.controls.imageUrl.value) {
+              <app-file-attachment
+                [url]="form.controls.imageUrl.value"
+                [preview]="true"
+                label="Ver imagen del anuncio"
+              />
+              <button type="button" class="secondary" (click)="form.controls.imageUrl.setValue('')">
+                Quitar imagen
+              </button>
+            }
+            <div class="publication-options">
+              <label class="checkbox"
+                ><input type="checkbox" formControlName="published" />Publicar anuncio</label
+              >
+              <label class="checkbox"
+                ><input type="checkbox" formControlName="pinned" />Fijar al inicio del curso</label
+              >
+            </div>
+            <p class="help">
+              Los borradores solo son visibles para el docente. Los alumnos recibirán el aviso
+              cuando lo publiques.
+            </p>
+          } @else {
+            <label for="description">Descripción <span class="help">(opcional)</span></label
+            ><textarea
+              id="description"
+              formControlName="description"
+              rows="3"
+              maxlength="5000"
+              placeholder="Añade instrucciones o una descripción"
+            ></textarea>
+          }
+          @if (state().mode === 'RESOURCE') {
+            <div class="publication-options">
+              <label class="checkbox"
+                ><input type="checkbox" formControlName="published" />Publicado</label
+              >
+              <label class="checkbox"
+                ><input type="checkbox" formControlName="visible" />Visible para alumnos</label
+              >
+            </div>
+            <p class="help">Un recurso se muestra al alumno cuando está publicado y visible.</p>
+            @switch (form.controls.kind.value) {
+              @case ('MATERIAL') {
+                <label for="material-type">Formato</label
+                ><select id="material-type" formControlName="materialType">
+                  @for (type of materialTypes; track type) {
+                    <option [value]="type">{{ type }}</option>
+                  }
+                </select>
+                <app-file-upload
+                  [courseId]="workspace().course.id"
+                  [currentUrl]="form.controls.fileUrl.value"
+                  [disabled]="busy()"
+                  (busyChange)="uploading.set($event)"
+                  (uploaded)="fileUploaded($event)"
+                />
+                <label for="file-url">URL del archivo</label
+                ><input
+                  id="file-url"
+                  type="url"
+                  formControlName="fileUrl"
+                  maxlength="500"
+                  placeholder="https://"
+                />
+                @if (form.controls.fileUrl.value) {
+                  <app-file-attachment
+                    [url]="form.controls.fileUrl.value"
+                    [preview]="true"
+                    label="Revisar archivo del material"
+                  />
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="form.controls.fileUrl.setValue('')"
+                  >
+                    Quitar archivo
+                  </button>
+                }
+                <label for="external-url">Enlace externo</label
+                ><input
+                  id="external-url"
+                  type="url"
+                  formControlName="externalUrl"
+                  maxlength="500"
+                  placeholder="https://"
+                />
+                <label for="size-mb">Tamaño en MB <span class="help">(opcional)</span></label
+                ><input id="size-mb" type="number" formControlName="sizeMb" min="0" step="0.01" />
+                <p class="help">
+                  Sube un archivo o añade un enlace. Guarda el recurso para incorporarlo al curso.
+                </p>
+              }
+              @case ('CLASS') {
+                <div class="grid-two">
+                  <div>
+                    <label for="starts-at">Fecha y hora (Lima)</label
+                    ><input id="starts-at" type="datetime-local" formControlName="startsAt" />
+                  </div>
+                  <div>
+                    <label for="duration">Duración en minutos</label
+                    ><input
+                      id="duration"
+                      type="number"
+                      formControlName="durationMinutes"
+                      min="1"
+                      max="600"
+                      step="1"
+                    />
+                  </div>
+                </div>
+                <label for="live-url">Enlace de la sesión</label
+                ><input
+                  id="live-url"
+                  type="url"
+                  formControlName="externalUrl"
+                  maxlength="500"
+                  placeholder="https://"
+                />
+                <label for="recording-url">Enlace de la grabación</label
+                ><input
+                  id="recording-url"
+                  type="url"
+                  formControlName="recordingUrl"
+                  maxlength="500"
+                  placeholder="https://"
+                />
+                <label for="room">Sala</label
+                ><input
+                  id="room"
+                  formControlName="room"
+                  maxlength="100"
+                  placeholder="Nombre de la sala, si corresponde"
+                />
+              }
+              @case ('TASK') {
+                <label for="activity-type">Tipo de actividad</label
+                ><select id="activity-type" formControlName="activityType">
+                  <option value="TAREA">Tarea</option>
+                  <option value="EVALUACION">Evaluación</option>
+                  <option value="QUIZ">Quiz</option>
+                </select>
+                <div class="grid-two">
+                  <div>
+                    <label for="due-at">Fecha límite (Lima)</label
+                    ><input id="due-at" type="datetime-local" formControlName="dueAt" />
+                  </div>
+                  <div>
+                    <label for="max-score">Puntaje máximo</label
+                    ><input
+                      id="max-score"
+                      type="number"
+                      formControlName="maxScore"
+                      min="1"
+                      max="1000"
+                      step="1"
+                      required
+                    />
+                  </div>
+                </div>
+                <label>Guía o indicaciones adjuntas <span class="help">(opcional)</span></label>
+                <app-file-upload
+                  [courseId]="workspace().course.id"
+                  destination="ACTIVIDAD"
+                  [currentUrl]="form.controls.externalUrl.value"
+                  [disabled]="busy()"
+                  (busyChange)="uploading.set($event)"
+                  (uploaded)="fileUploaded($event)"
+                />
+                @if (form.controls.externalUrl.value) {
+                  <app-file-attachment
+                    [url]="form.controls.externalUrl.value"
+                    [preview]="true"
+                    label="Ver indicaciones adjuntas"
+                  />
+                  <button
+                    type="button"
+                    class="secondary"
+                    (click)="form.controls.externalUrl.setValue('')"
+                  >
+                    Quitar adjunto
+                  </button>
+                }
+                <p class="help">
+                  Puedes escribir las indicaciones en la descripción y adjuntar una imagen o
+                  documento de apoyo.
+                </p>
+                <label for="instructions-url">Enlace de instrucciones</label
+                ><input
+                  id="instructions-url"
+                  type="url"
+                  formControlName="externalUrl"
+                  maxlength="500"
+                  placeholder="https://"
+                />
+              }
+            }
+          }
+        }
+      </fieldset>
+    </div>
+    <footer>
+      <button type="button" class="secondary" [disabled]="busy() || uploading()" (click)="cancel()">
+        Cancelar</button
+      ><button
+        type="submit"
+        class="primary"
+        [class.danger]="state().mode === 'DELETE' || state().mode === 'REMOVE_STUDENT'"
+        [disabled]="busy() || uploading()"
+      >
+        {{
+          busy()
+            ? 'Guardando…'
+            : state().mode === 'DELETE'
+              ? 'Eliminar'
+              : state().mode === 'REMOVE_STUDENT'
+                ? 'Retirar alumno'
+                : 'Guardar cambios'
+        }}
+      </button>
+    </footer>
+  </form>
+</dialog>

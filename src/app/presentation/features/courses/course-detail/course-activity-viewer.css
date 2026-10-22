@@ -1,0 +1,217 @@
+.activity-dialog {
+  width: min(1240px, calc(100vw - 2rem));
+}
+.activity-dialog .viewer-body {
+  background: var(--color-app-bg);
+}
+.activity-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+.activity-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 1.4rem;
+  align-items: start;
+}
+.activity-main {
+  min-width: 0;
+  display: grid;
+  gap: 1.2rem;
+}
+.activity-card {
+  background: white;
+  border: 1px solid var(--color-app-border);
+  border-radius: 1rem;
+  padding: 1.4rem;
+  min-width: 0;
+}
+.activity-card h3 {
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.5;
+}
+.overview {
+  display: flex;
+  gap: 1rem;
+}
+.card-icon {
+  display: inline-flex;
+  padding: 0.7rem;
+  height: fit-content;
+  border-radius: 0.8rem;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.due-label {
+  margin: 0.9rem 0;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
+}
+.due-label strong {
+  display: block;
+  color: var(--color-text-main);
+}
+.instruction-excerpt {
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.9;
+  color: var(--color-text-secondary);
+  margin-top: 0.8rem;
+}
+.instruction-intro .btn {
+  margin-top: 1rem;
+}
+.instruction-panel {
+  padding: 0;
+}
+.instruction-panel > summary {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.2rem 1.4rem;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+}
+.instruction-panel[open] > summary {
+  border-bottom: 1px solid var(--color-app-border);
+}
+.instruction-content {
+  padding: 0 1.3rem 1.3rem;
+}
+.instruction-content app-file-attachment {
+  display: block;
+  margin-top: 1rem;
+}
+.activity-sidebar {
+  position: sticky;
+  top: 0;
+  min-width: 0;
+}
+.details-card h3 {
+  padding-bottom: 0.4rem;
+}
+.details-card dl > div {
+  padding: 1.1rem 0;
+  border-bottom: 1px solid var(--color-app-border);
+}
+.details-card dl > div:last-child {
+  border-bottom: 0;
+}
+.details-card dt {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 650;
+  font-size: 0.72rem;
+}
+.details-card dd {
+  margin-top: 0.5rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+.details-card .maximum-score {
+  font-size: 1.8rem;
+  color: var(--color-text-main);
+  font-weight: 750;
+}
+.maximum-score small {
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+.prepare-btn {
+  width: 100%;
+  white-space: normal;
+  line-height: 1.6;
+  margin-top: 1rem;
+}
+.details-card .score {
+  color: var(--color-primary);
+}
+.feedback {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.answer-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.answer-heading > span {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+.word-count {
+  text-align: right;
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  margin: 0.5rem 0 1.2rem;
+}
+.answer-file {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+.answer-file > .btn {
+  justify-self: start;
+}
+.external-answer {
+  margin-top: 1.2rem;
+}
+.external-answer > summary {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+footer {
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.summary-btn {
+  margin-right: auto;
+}
+@media (max-width: 900px) {
+  .activity-layout {
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 1rem;
+  }
+  .activity-card {
+    padding: 1rem;
+  }
+}
+@media (max-width: 700px) {
+  .activity-layout {
+    grid-template-columns: 1fr;
+  }
+  .activity-sidebar {
+    position: static;
+  }
+  .activity-layout:not(.summary-layout) .activity-sidebar {
+    grid-row: 1;
+  }
+  .details-card dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+  }
+  .details-card dl > div {
+    min-width: 0;
+  }
+  .activity-dialog {
+    width: calc(100vw - 1rem);
+  }
+  .answer-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  footer {
+    padding: 1rem;
+  }
+}

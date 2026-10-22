@@ -1,0 +1,92 @@
+@let data = workspace();
+<aside class="course-aside" aria-label="Resumen del curso">
+  <section class="metrics-card">
+    <div class="aside-heading">
+      <span class="small-symbol"><app-course-icon name="chart" /></span>
+      <h2>Métricas del curso</h2>
+    </div>
+    <div class="metric">
+      <span>Alumnos activos</span
+      ><strong
+        >{{ activeStudents() }}<small> / {{ data.course.capacity }} cupos</small></strong
+      >
+    </div>
+    <div class="metric">
+      <div class="metric-label">
+        <span>Entregas calificadas</span
+        ><strong class="metric-percentage">{{
+          gradedPercentage() !== null ? gradedPercentage() + '%' : '—'
+        }}</strong>
+      </div>
+      <div
+        class="progress-track"
+        role="progressbar"
+        aria-label="Porcentaje de entregas calificadas"
+        [attr.aria-valuenow]="gradedPercentage()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <span [style.width.%]="gradedPercentage() ?? 0"></span>
+      </div>
+      <small>{{ gradedCount() }} de {{ data.submissions.length }} entregas</small>
+    </div>
+    <div class="metric">
+      <div class="metric-label">
+        <span>Progreso promedio</span
+        ><strong class="metric-percentage">{{
+          averageProgress() !== null ? (averageProgress() | number: '1.0-1') + '%' : '—'
+        }}</strong>
+      </div>
+      <div
+        class="progress-track"
+        role="progressbar"
+        [attr.aria-label]="data.canManage ? 'Progreso promedio del curso' : 'Mi progreso'"
+        [attr.aria-valuenow]="averageProgress()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <span [style.width.%]="averageProgress() ?? 0"></span>
+      </div>
+      <small>Recursos revisados y actividades entregadas</small>
+    </div>
+  </section>
+  <section class="info-card">
+    <h2>Organización académica</h2>
+    <dl>
+      <div>
+        <dt>Unidades</dt>
+        <dd>{{ data.units.length }}</dd>
+      </div>
+      <div>
+        <dt>Semanas</dt>
+        <dd>{{ weeks().length }}</dd>
+      </div>
+      <div>
+        <dt>Clases</dt>
+        <dd>{{ resources().length - tasks().length - materialCount() }}</dd>
+      </div>
+      <div>
+        <dt>Materiales</dt>
+        <dd>{{ materialCount() }}</dd>
+      </div>
+      <div>
+        <dt>Tareas</dt>
+        <dd>{{ tasks().length }}</dd>
+      </div>
+    </dl>
+    @if (data.course.startsOn || data.course.endsOn) {
+      <div class="course-dates">
+        @if (data.course.startsOn) {
+          <p>
+            Inicio <strong>{{ data.course.startsOn | date: 'dd/MM/yyyy' }}</strong>
+          </p>
+        }
+        @if (data.course.endsOn) {
+          <p>
+            Fin <strong>{{ data.course.endsOn | date: 'dd/MM/yyyy' }}</strong>
+          </p>
+        }
+      </div>
+    }
+  </section>
+</aside>

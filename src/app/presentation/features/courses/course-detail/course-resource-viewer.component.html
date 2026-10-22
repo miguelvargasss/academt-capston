@@ -1,0 +1,394 @@
+@let item = resource();
+<dialog
+  #viewer
+  [class.activity-dialog]="item.kind === 'TASK'"
+  aria-labelledby="resource-viewer-title"
+  (cancel)="close($event)"
+>
+  <header>
+    <div>
+      <p class="eyebrow">
+        {{ item.kind === 'TASK' ? 'ACTIVIDAD DEL CURSO' : 'VISOR DE RECURSOS' }}
+      </p>
+      <h2 id="resource-viewer-title">{{ item.title }}</h2>
+    </div>
+    <button
+      class="icon-btn"
+      aria-label="Cerrar recurso"
+      [disabled]="busy() || uploading()"
+      (click)="close()"
+    >
+      ×
+    </button>
+  </header>
+  <div class="viewer-body">
+    @if (error() || validationError()) {
+      <div class="error" role="alert">{{ validationError() || error() }}</div>
+    }
+    @if (item.kind === 'TASK') {
+      <div class="activity-heading">
+        <span class="tag tag-orange">{{
+          item.activityType === 'EVALUACION'
+            ? 'Evaluación'
+            : item.activityType === 'QUIZ'
+              ? 'Quiz'
+              : 'Tarea'
+        }}</span>
+        @if (!canManage()) {
+          <span class="tag" [class.tag-green]="submission()?.status === 'CALIFICADA'">{{
+            deliveryStatus()
+          }}</span>
+        }
+      </div>
+      <div class="activity-layout" [class.summary-layout]="activityView() === 'SUMMARY'">
+        <main class="activity-main">
+          @if (activityView() === 'SUMMARY') {
+            <section class="activity-card overview">
+              <span class="card-icon"><app-course-icon name="calendar" /></span>
+              <div>
+                <h3>Detalles de la actividad</h3>
+                @if (dueDate(); as date) {
+                  <p class="due-label">
+                    Fecha límite:
+                    <strong>{{ date | date: 'dd/MM/yyyy, HH:mm' : '-0500' }} (Lima)</strong>
+                  </p>
+                } @else {
+                  <p class="due-label">Esta actividad no tiene fecha límite.</p>
+                }
+                <p class="help">
+                  Puedes enviar una respuesta de texto, un documento o una imagen. Revisa las
+                  instrucciones antes de preparar tu entrega.
+                </p>
+                <p class="help">
+                  Las entregas posteriores al plazo se registran como tardías. Puedes actualizar tu
+                  respuesta hasta que sea calificada.
+                </p>
+              </div>
+            </section>
+            <section class="activity-card instruction-intro">
+              <h3>Instrucciones y material de apoyo</h3>
+              @if (item.description) {
+                <p class="instruction-excerpt">{{ item.description }}</p>
+              }
+              <p class="help">
+                {{
+                  item.externalUrl
+                    ? 'La actividad incluye un archivo de instrucciones que puedes consultar en el visor.'
+                    : 'Consulta las indicaciones del docente y prepara tu respuesta en el espacio de entrega.'
+                }}
+              </p>
+              <button class="btn" type="button" (click)="activityView.set('WORKSPACE')">
+                Ver instrucciones <app-course-icon name="external" />
+              </button>
+            </section>
+          } @else {
+            <details class="activity-card instruction-panel" open>
+              <summary>Instrucciones de la actividad <span aria-hidden="true">⌄</span></summary>
+              <div class="instruction-content">
+                @if (item.description) {
+                  <p class="description">{{ item.description }}</p>
+                }
+                @if (safeUrl(item.externalUrl); as link) {
+                  <app-file-attachment
+                    [url]="link"
+                    [preview]="true"
+                    label="Abrir instrucciones originales"
+                  />
+                } @else if (!item.description) {
+                  <p class="help">El docente no ha añadido instrucciones adicionales.</p>
+                }
+              </div>
+            </details>
+            @if (!canManage()) {
+              @if (submission()?.status !== 'CALIFICADA') {
+                <form
+                  id="activity-answer"
+                  [formGroup]="form"
+                  (ngSubmit)="submit()"
+                  class="activity-card answer-panel"
+                  novalidate
+                >
+                  <div class="answer-heading">
+                    <h3>{{ submission() ? 'Actualizar tu entrega' : 'Tu entrega' }}</h3>
+                    <span>Texto y archivo opcionales</span>
+                  </div>
+                  <label for="answer-text">Respuesta</label>
+                  <textarea
+                    id="answer-text"
+                    rows="6"
+                    maxlength="20000"
+                    formControlName="textContent"
+                    [readOnly]="busy() || uploading()"
+                    placeholder="Escribe tu respuesta o añade un archivo con tu trabajo…"
+                  ></textarea>
+                  <p class="word-count">
+                    {{ wordCount() }} {{ wordCount() === 1 ? 'palabra' : 'palabras' }}
+                  </p>
+                  <app-file-upload
+                    [courseId]="courseId()"
+                    destination="ENTREGA"
+                    [currentUrl]="form.controls.fileUrl.value"
+                    [disabled]="busy()"
+                    (busyChange)="uploading.set($event)"
+                    (uploaded)="form.controls.fileUrl.setValue($event.url)"
+                  />
+                  @if (form.controls.fileUrl.value) {
+                    <div class="answer-file">
+                      <app-file-attachment
+                        [url]="form.controls.fileUrl.value"
+                        [preview]="true"
+                        label="Revisar archivo de respuesta"
+                      />
+                      <button
+                        type="button"
+                        class="btn"
+                        [disabled]="busy() || uploading()"
+                        (click)="form.controls.fileUrl.setValue('')"
+                      >
+                        Quitar archivo
+                      </button>
+                    </div>
+                  }
+                  <details class="external-answer">
+                    <summary>Usar un enlace a mi archivo</summary>
+                    <label for="answer-url">Enlace del documento o imagen</label>
+                    <input
+                      id="answer-url"
+                      type="url"
+                      formControlName="fileUrl"
+                      maxlength="500"
+                      placeholder="https://"
+                      [readOnly]="busy() || uploading()"
+                    />
+                    <p class="help">El docente debe tener permiso para abrir el enlace.</p>
+                  </details>
+                  <p class="help">
+                    Tu respuesta se registra al pulsar
+                    {{ submission() ? '«Actualizar entrega»' : '«Enviar entrega»' }}.
+                  </p>
+                </form>
+              } @else {
+                <section class="activity-card graded-answer">
+                  <div class="answer-heading">
+                    <h3>Tu entrega</h3>
+                    <span class="tag tag-green">Calificada</span>
+                  </div>
+                  @if (safeUrl(submission()?.fileUrl); as link) {
+                    <app-file-attachment
+                      [url]="link"
+                      [preview]="true"
+                      label="Ver archivo enviado"
+                    />
+                  }
+                  @if (submission()?.textContent) {
+                    <p class="description">{{ submission()?.textContent }}</p>
+                  }
+                  <p class="help">Esta entrega ya fue calificada y no se puede modificar.</p>
+                </section>
+              }
+            } @else {
+              <p class="help">
+                Revisa las entregas de esta actividad en la sección Calificaciones del curso.
+              </p>
+            }
+          }
+        </main>
+        <aside class="activity-sidebar">
+          <section class="activity-card details-card">
+            <h3>
+              {{
+                activityView() === 'SUMMARY' ? 'Calificación y entrega' : 'Detalles e información'
+              }}
+            </h3>
+            <dl>
+              <div>
+                <dt><app-course-icon name="calendar" /> Fecha límite</dt>
+                <dd>
+                  {{
+                    dueDate()
+                      ? (dueDate() | date: 'dd/MM/yyyy, HH:mm' : '-0500') + ' (Lima)'
+                      : 'Sin fecha límite'
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt><app-course-icon name="file" /> Puntuación máxima</dt>
+                <dd class="maximum-score">{{ item.maxScore }} <small>puntos</small></dd>
+              </div>
+              @if (!canManage()) {
+                <div>
+                  <dt><app-course-icon name="check" /> Estado de tu entrega</dt>
+                  <dd>{{ deliveryStatus() }}</dd>
+                </div>
+                @if (submission(); as delivery) {
+                  <div>
+                    <dt>Último envío</dt>
+                    <dd>{{ delivery.submittedAt | date: 'dd/MM/yyyy, HH:mm' : '-0500' }} (Lima)</dd>
+                  </div>
+                  @if (delivery.status === 'CALIFICADA') {
+                    <div class="grade-result">
+                      <dt>Tu calificación</dt>
+                      <dd class="score">
+                        {{ delivery.grade }} <small>/ {{ item.maxScore }}</small>
+                      </dd>
+                    </div>
+                    @if (delivery.feedback) {
+                      <div>
+                        <dt>Comentarios del docente</dt>
+                        <dd class="feedback">{{ delivery.feedback }}</dd>
+                      </div>
+                    }
+                  }
+                }
+              }
+            </dl>
+            @if (late() && submission()?.status !== 'CALIFICADA') {
+              <p class="deadline-notice">
+                El plazo terminó. Un nuevo envío quedará registrado como entrega tardía.
+              </p>
+            }
+            @if (activityView() === 'SUMMARY') {
+              <button
+                type="button"
+                class="btn btn-primary prepare-btn"
+                (click)="activityView.set('WORKSPACE')"
+              >
+                {{
+                  submission()?.status === 'CALIFICADA'
+                    ? 'Revisar mi entrega'
+                    : 'Ver instrucciones y preparar entrega'
+                }}
+              </button>
+            }
+          </section>
+        </aside>
+      </div>
+    } @else {
+      @if (
+        item.kind === 'MATERIAL' &&
+        item.materialType !== 'AUDIO' &&
+        item.materialType !== 'VIDEO' &&
+        url()
+      ) {
+        <app-file-attachment [url]="url()" [preview]="true" [label]="'Abrir ' + item.title" />
+      } @else if (videoEmbed(); as embed) {
+        <iframe
+          class="video-frame"
+          [src]="embed"
+          title="Video del recurso"
+          allow="fullscreen; picture-in-picture"
+          allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+      } @else if (item.materialType === 'VIDEO' && url()) {
+        <video class="media" [src]="url()" controls preload="metadata">
+          Tu navegador no puede reproducir este video.
+        </video>
+      } @else if (item.materialType === 'AUDIO' && url()) {
+        <div class="audio-player">
+          <app-course-icon name="file" /><audio [src]="url()" controls preload="metadata"></audio>
+        </div>
+      } @else if (item.materialType === 'IMAGEN' && url()) {
+        <img class="resource-image" [src]="url()" [alt]="item.title" />
+      } @else if (pdfEmbed(); as pdf) {
+        <iframe
+          class="pdf-frame"
+          [src]="pdf"
+          title="Documento PDF"
+          sandbox=""
+          referrerpolicy="no-referrer"
+        ></iframe>
+      } @else {
+        <div class="resource-placeholder">
+          <span class="empty-icon"
+            ><app-course-icon [name]="item.kind === 'CLASS' ? 'video' : 'file'"
+          /></span>
+          <h3>
+            {{
+              item.kind === 'CLASS'
+                ? 'Sesión del curso'
+                : item.materialType === 'PDF'
+                  ? 'Documento PDF'
+                  : 'Material de aprendizaje'
+            }}
+          </h3>
+          <p>Abre el recurso para revisarlo o descargarlo desde su ubicación original.</p>
+        </div>
+      }
+      @if (item.description) {
+        <p class="description">{{ item.description }}</p>
+      }
+      <div class="flex items-center gap-3 flex-wrap mt-5">
+        @if (url(); as link) {
+          @if (item.kind === 'CLASS') {
+            <a class="btn" [href]="link" target="_blank" rel="noopener noreferrer"
+              >Abrir sesión<app-course-icon name="external"
+            /></a>
+          } @else if (item.materialType === 'AUDIO' || item.materialType === 'VIDEO') {
+            <app-file-attachment [url]="link" label="Abrir o descargar recurso" />
+          }
+        }
+        @if (item.kind === 'CLASS' && safeUrl(item.recordingUrl); as recording) {
+          <a class="btn" [href]="recording" target="_blank" rel="noopener noreferrer"
+            >Ver grabación</a
+          >
+        }
+        @if (!canManage()) {
+          <button
+            class="btn btn-primary"
+            [disabled]="busy() || completed()"
+            (click)="complete.emit(item)"
+          >
+            <app-course-icon name="check" />{{ completed() ? 'Revisado' : 'Marcar como revisado' }}
+          </button>
+        }
+      </div>
+      @if (item.startsAt) {
+        <p class="help mt-4">
+          {{ item.startsAt | date: 'dd/MM/yyyy, HH:mm' }} (Lima)
+          @if (item.durationMinutes) {
+            · {{ item.durationMinutes }} minutos
+          }
+          @if (item.room) {
+            · {{ item.room }}
+          }
+        </p>
+      }
+    }
+  </div>
+  <footer>
+    @if (item.kind === 'TASK' && activityView() === 'WORKSPACE' && !canManage()) {
+      <button
+        type="button"
+        class="btn summary-btn"
+        [disabled]="busy() || uploading()"
+        (click)="activityView.set('SUMMARY')"
+      >
+        Volver a detalles
+      </button>
+    }
+    <button type="button" class="btn" [disabled]="busy() || uploading()" (click)="close()">
+      Cerrar
+    </button>
+    @if (
+      item.kind === 'TASK' &&
+      activityView() === 'WORKSPACE' &&
+      !canManage() &&
+      submission()?.status !== 'CALIFICADA'
+    ) {
+      <button
+        type="submit"
+        form="activity-answer"
+        class="btn btn-primary"
+        [disabled]="
+          busy() ||
+          uploading() ||
+          form.invalid ||
+          (!form.controls.fileUrl.value.trim() && !form.controls.textContent.value.trim())
+        "
+      >
+        {{ busy() ? 'Enviando…' : submission() ? 'Actualizar entrega' : 'Enviar entrega' }}
+      </button>
+    }
+  </footer>
+</dialog>

@@ -1,0 +1,62 @@
+@let data = workspace();
+<section class="course-hero" [attr.data-level]="data.course.level" aria-labelledby="course-title">
+  <div class="hero-decoration" aria-hidden="true"></div>
+  <div class="hero-main">
+    <div class="hero-eyebrow">
+      <span class="hero-dot"></span>{{ data.canManage ? 'AULA DOCENTE' : 'MI AULA'
+      }}<span class="hero-divider">/</span>{{ data.course.level }} · CEFR
+    </div>
+    <div class="hero-title-row">
+      <h1 id="course-title">{{ data.course.title }}</h1>
+      <span class="course-status" [class.inactive]="data.course.status !== 'ACTIVO'">{{
+        statusLabels[data.course.status]
+      }}</span>
+    </div>
+    @if (data.course.description) {
+      <p class="hero-description">{{ data.course.description }}</p>
+    }
+    <div class="hero-meta">
+      <span><app-course-icon name="users" />{{ data.course.teacherName }}</span>
+      @if (data.course.schedule) {
+        <span><app-course-icon name="calendar" />{{ data.course.schedule }}</span>
+      }
+      @if (data.canManage) {
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 text-xs underline underline-offset-4 cursor-pointer"
+          (click)="scheduleRequested.emit()"
+        >
+          <app-course-icon name="calendar" />Configurar horario
+        </button>
+      }
+    </div>
+  </div>
+  <div class="hero-stats">
+    <span
+      ><strong>{{ activeStudents() }}</strong> alumnos activos</span
+    ><span
+      ><strong>{{ data.units.length }}</strong> unidades</span
+    ><span
+      ><strong>{{ resources().length }}</strong> recursos</span
+    >
+  </div>
+</section>
+
+<nav class="course-tabs" aria-label="Secciones del curso">
+  @for (item of tabs(); track item.id) {
+    <a
+      [routerLink]="[]"
+      [queryParams]="{ tab: item.id }"
+      queryParamsHandling="merge"
+      [class.active]="activeTab() === item.id"
+      [attr.aria-current]="activeTab() === item.id ? 'page' : null"
+      >{{ item.label }}
+      @if (item.id === 'students') {
+        <span class="tab-count">{{ data.students.length }}</span>
+      }
+      @if (item.id === 'announcements' && data.announcements.length) {
+        <span class="tab-count">{{ data.announcements.length }}</span>
+      }
+    </a>
+  }
+</nav>

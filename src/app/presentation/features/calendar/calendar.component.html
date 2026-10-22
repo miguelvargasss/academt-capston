@@ -1,0 +1,165 @@
+<div class="space-y-6 animate-fadeIn">
+  <!-- Cabecera -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-text-main">Horarios y calendario</h1>
+      <p class="text-xs text-text-secondary mt-1">
+        Sesiones semanales de tus cursos, clases, tutorías y eventos.
+      </p>
+    </div>
+
+    <div
+      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-app-border bg-white text-xs font-semibold text-text-main shadow-2xs"
+    >
+      <span class="w-2 h-2 rounded-full bg-primary"></span>
+      <span>Zona Horaria: America/Lima · UTC−5</span>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex gap-2 items-center">
+      <button
+        class="bg-white border border-app-border px-3 py-2 rounded-lg text-xs"
+        aria-label="Semana anterior"
+        (click)="move(-7)"
+      >
+        ←</button
+      ><button
+        class="bg-white border border-app-border px-3 py-2 rounded-lg text-xs"
+        (click)="today()"
+      >
+        Esta semana</button
+      ><button
+        class="bg-white border border-app-border px-3 py-2 rounded-lg text-xs"
+        aria-label="Semana siguiente"
+        (click)="move(7)"
+      >
+        →
+      </button>
+    </div>
+    <label class="text-xs text-text-secondary flex gap-2 items-center"
+      >Ver semana<input
+        class="bg-white border border-app-border rounded-lg p-2"
+        type="date"
+        aria-label="Fecha de la semana"
+        [value]="from()"
+        (change)="choose($event)"
+    /></label>
+  </div>
+  <p class="text-xs text-text-secondary">
+    Del {{ from() | date: 'dd/MM/yyyy' }} al {{ to() | date: 'dd/MM/yyyy' }}
+  </p>
+  @if (error()) {
+    <div
+      class="bg-red-50 border border-red-200 p-4 rounded-xl text-red-800 text-xs flex justify-between gap-4"
+      role="alert"
+    >
+      <span>{{ error() }}</span
+      ><button class="underline" (click)="refresh()">Reintentar</button>
+    </div>
+  }
+  @if (loading()) {
+    <p class="text-xs text-text-secondary" role="status">Cargando horario…</p>
+  }
+  <!-- Lista de Eventos y Clases -->
+  <div class="space-y-4">
+    @for (event of events(); track event.id) {
+      <div
+        class="bg-white p-5 rounded-2xl border border-app-border shadow-card hover:border-primary/40 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
+        <!-- Izquierda: Fecha y Detalles -->
+        <div class="flex items-start gap-4">
+          <!-- Cuadro de Fecha -->
+          <div
+            class="w-14 h-14 rounded-xl bg-primary-soft text-primary-dark flex flex-col items-center justify-center flex-shrink-0 border border-primary/20"
+          >
+            <span class="text-[10px] font-bold uppercase tracking-wider">{{
+              event.day.slice(0, 3)
+            }}</span>
+            <span class="text-base font-extrabold leading-none mt-0.5">{{
+              event.date.split(' ')[0]
+            }}</span>
+          </div>
+
+          <!-- Información del Evento -->
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-semibold text-primary">{{
+                event.courseTitle || (event.kind ? kindLabels[event.kind] : 'Evento')
+              }}</span>
+              <span class="text-text-muted">&bull;</span>
+              <span class="text-xs text-text-secondary">{{ event.time }}</span>
+            </div>
+            <h2 class="text-sm font-bold text-text-main">{{ event.title }}</h2>
+            @if (event.teacher) {
+              <p class="text-xs text-text-muted mt-0.5">Docente: {{ event.teacher }}</p>
+            }
+            <p class="text-xs text-text-muted mt-1">
+              {{ event.date }}
+              @if (event.kind) {
+                · {{ kindLabels[event.kind] }}
+              }
+            </p>
+          </div>
+        </div>
+
+        <!-- Derecha: Estado y Botón de Conexión -->
+        <div class="flex items-center gap-3 self-end md:self-auto">
+          <app-badge variant="soft">{{ labels[event.status] }}</app-badge>
+          @if (event.courseId) {
+            <a
+              [routerLink]="['/courses', event.courseId]"
+              class="text-xs text-primary font-semibold underline underline-offset-4"
+              >Ver curso</a
+            >
+          }
+          @if (event.virtualUrl) {
+            <a
+              [href]="event.virtualUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:bg-primary-dark text-white text-xs font-semibold shadow-xs transition-all flex items-center gap-1.5"
+            >
+              <svg
+                class="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect width="14" height="12" x="1" y="6" rx="2" />
+              </svg>
+              <span>Unirse a la Sesión</span>
+            </a>
+          }
+        </div>
+      </div>
+    } @empty {
+      @if (!loading() && !error()) {
+        <div class="bg-white p-12 rounded-2xl border border-app-border text-center shadow-card">
+          <div
+            class="w-12 h-12 rounded-full bg-primary-soft text-primary flex items-center justify-center mx-auto mb-3"
+          >
+            <svg
+              class="w-6 h-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect width="18" height="18" x="3" y="4" rx="2" />
+              <line x1="16" x2="16" y1="2" y2="6" />
+              <line x1="8" x2="8" y1="2" y2="6" />
+              <line x1="3" x2="21" y1="10" y2="10" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-bold text-text-main">No hay sesiones esta semana</h3>
+          <p class="text-xs text-text-secondary mt-1">
+            Las clases de tus cursos y las tutorías aparecerán aquí según sus días y horas.
+          </p>
+        </div>
+      }
+    }
+  </div>
+</div>

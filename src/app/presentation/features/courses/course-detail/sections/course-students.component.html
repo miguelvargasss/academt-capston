@@ -1,0 +1,136 @@
+@let data = workspace();
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">COMUNIDAD DEL CURSO</p>
+    <h2>{{ canManage() ? 'Alumnos del curso' : 'Compañeros de clase' }}</h2>
+    <p class="subtitle">
+      {{
+        canManage()
+          ? 'Supervisa las matrículas y el avance de cada estudiante.'
+          : 'Conoce a las personas que comparten tu aula.'
+      }}
+    </p>
+  </div>
+  <span class="tag"
+    >{{ data.students.length }} {{ canManage() ? 'matrículas' : 'compañeros' }}</span
+  >
+</div>
+@if (canManage()) {
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+    <div class="rounded-2xl bg-white border border-app-border p-5">
+      <p class="text-text-secondary text-xs">Total inscritos</p>
+      <strong class="block text-2xl mt-2">{{
+        data.stats?.totalStudents ?? data.students.length
+      }}</strong>
+    </div>
+    <div class="rounded-2xl bg-white border border-app-border p-5">
+      <p class="text-text-secondary text-xs">Alumnos activos</p>
+      <strong class="block text-2xl mt-2">{{ activeCount() }}</strong>
+    </div>
+    <div class="rounded-2xl bg-white border border-app-border p-5">
+      <p class="text-text-secondary text-xs">Avance grupal promedio</p>
+      <strong class="block text-2xl text-primary mt-2">{{
+        data.stats?.averageProgress !== null && data.stats?.averageProgress !== undefined
+          ? (data.stats?.averageProgress | number: '1.0-1') + '%'
+          : '—'
+      }}</strong>
+    </div>
+  </div>
+}
+<label class="search mb-5"
+  ><app-course-icon name="search" /><input
+    aria-label="Buscar alumnos"
+    placeholder="Buscar por nombre o correo…"
+    [value]="query()"
+    (input)="search($event)"
+/></label>
+<div class="rounded-2xl bg-white border border-app-border overflow-x-auto">
+  <table class="w-full text-left">
+    <thead class="bg-app-bg text-text-secondary text-[10px] uppercase tracking-wider">
+      <tr>
+        <th class="p-4 font-semibold">{{ canManage() ? 'Estudiante' : 'Compañero' }}</th>
+        @if (canManage()) {
+          <th class="p-4 font-semibold">Inscripción</th>
+          <th class="p-4 font-semibold min-w-32">Avance</th>
+          <th class="p-4 font-semibold">Estado</th>
+          <th class="p-4"><span class="sr-only">Acciones</span></th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (student of students(); track student.enrollmentId) {
+        <tr class="border-t border-app-border-subtle">
+          <td class="p-4">
+            <div class="flex items-center gap-3">
+              @if (avatar(student.avatarUrl); as src) {
+                <img [src]="src" alt="" class="w-10 h-10 rounded-full object-cover" />
+              } @else {
+                <span
+                  class="w-10 h-10 rounded-full bg-primary-soft text-primary font-bold flex items-center justify-center shrink-0"
+                  >{{ initials(student.name) }}</span
+                >
+              }
+              <div>
+                <strong class="font-semibold">{{ student.name }}</strong
+                ><small class="block mt-1 text-text-secondary">{{ student.email }}</small>
+              </div>
+            </div>
+          </td>
+          @if (canManage()) {
+            <td class="p-4 whitespace-nowrap text-text-secondary">
+              {{ student.enrolledAt | date: 'dd/MM/yyyy' }}
+            </td>
+            <td class="p-4">
+              @if (student.progress !== null && student.progress !== undefined) {
+                <span class="font-semibold">{{ student.progress | number: '1.0-1' }}%</span>
+                <div class="progress-track mt-2">
+                  <span [style.width.%]="student.progress"></span>
+                </div>
+              } @else {
+                <span class="text-text-muted">Sin contenido</span>
+              }
+            </td>
+            <td class="p-4">
+              <span
+                class="tag"
+                [class.tag-green]="student.status === 'ACTIVA'"
+                [class.tag-orange]="student.status === 'RIESGO'"
+                >{{ statusLabels[student.status] }}</span
+              >
+            </td>
+            <td class="p-4">
+              @if (student.status === 'ACTIVA' || student.status === 'RIESGO') {
+                <button
+                  class="icon-btn danger"
+                  [disabled]="busy()"
+                  [attr.aria-label]="'Retirar a ' + student.name"
+                  title="Retirar del curso"
+                  (click)="remove.emit(student)"
+                >
+                  <app-course-icon name="trash" />
+                </button>
+              }
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="canManage() ? 5 : 1" class="p-10 text-center text-text-secondary">
+            {{
+              query()
+                ? 'No hay coincidencias para esta búsqueda.'
+                : 'No hay alumnos matriculados para mostrar.'
+            }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+@if (canManage()) {
+  <p class="text-text-muted text-[11px] leading-relaxed mt-4">
+    El avance se calcula con los materiales revisados y las actividades entregadas, sobre el
+    contenido publicado y visible. Retirar una matrícula conserva las entregas y notas del
+    estudiante.
+  </p>
+}

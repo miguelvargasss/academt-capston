@@ -1,0 +1,138 @@
+:host {
+  display: block;
+  margin: 1rem 0;
+}
+.upload-zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.7rem 1rem;
+  text-align: center;
+  border: 1.5px dashed var(--color-app-border, #d6c7bd);
+  border-radius: 14px;
+  background: var(--color-app-bg, #faf8f6);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.upload-zone.dragging {
+  border-color: var(--color-primary, #ed4c20);
+  background: #fff1e8;
+}
+.upload-zone.is-disabled {
+  opacity: 0.65;
+}
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.upload-zone:focus-within {
+  outline: 2px solid var(--color-primary, #ed4c20);
+  outline-offset: 3px;
+}
+.upload-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #fff0e6;
+  color: var(--color-primary, #ed4c20);
+}
+.upload-icon app-course-icon {
+  width: 23px;
+  height: 23px;
+}
+.upload-zone strong {
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: var(--color-text-main, #222);
+}
+.upload-zone p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #665c55);
+}
+.choose-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--color-app-border, #d6c7bd);
+  border-radius: 8px;
+  background: white;
+  color: var(--color-text-main, #222);
+  padding: 0.65rem 1rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+  margin-top: 0.35rem;
+}
+.choose-file:hover {
+  border-color: var(--color-primary, #ed4c20);
+  color: var(--color-primary, #ed4c20);
+}
+.choose-file:disabled {
+  cursor: default;
+}
+.uploaded-name {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #237246;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.upload-error {
+  margin: 0.6rem 0;
+  color: #b42318;
+  font-size: 0.8rem;
+}
+.upload-spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid #e6d7cb;
+  border-top-color: var(--color-primary, #ed4c20);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.upload-progress {
+  width: min(300px, 90%);
+  height: 4px;
+  border-radius: 6px;
+  background: #ecdfd5;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.upload-progress span {
+  display: block;
+  height: 100%;
+  width: 35%;
+  background: var(--color-primary, #ed4c20);
+  animation: progress 1.3s ease-in-out infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(390%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .upload-spinner,
+  .upload-progress span {
+    animation: none;
+  }
+}

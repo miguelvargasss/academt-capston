@@ -1,0 +1,134 @@
+@let data = workspace();
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">EL TABLÓN DEL AULA</p>
+    <h2>Anuncios del curso</h2>
+    <p class="subtitle">Comunicados, indicaciones y novedades para el grupo.</p>
+  </div>
+  @if (canManage()) {
+    <button
+      class="btn btn-primary"
+      [disabled]="busy()"
+      (click)="edit.emit({ mode: 'ANNOUNCEMENT' })"
+    >
+      <app-course-icon name="plus" />Nuevo anuncio
+    </button>
+  }
+</div>
+@if (canManage() && data.announcements.length) {
+  <div class="mb-5 flex items-center justify-between gap-3">
+    <span class="text-text-secondary">{{ announcements().length }} anuncios</span
+    ><select
+      class="bg-white border border-app-border rounded-lg px-3 py-2 text-xs"
+      aria-label="Filtrar anuncios"
+      [value]="filter()"
+      (change)="changeFilter($event)"
+    >
+      <option value="ALL">Todos los anuncios</option>
+      <option value="PUBLISHED">Publicados</option>
+      <option value="DRAFTS">Borradores</option>
+    </select>
+  </div>
+}
+<div class="space-y-4">
+  @for (announcement of announcements(); track announcement.id) {
+    <article
+      class="bg-white border border-app-border rounded-2xl p-5 sm:p-6"
+      [class.pinned]="announcement.pinned"
+    >
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          @if (announcement.pinned) {
+            <span class="tag tag-orange"><app-course-icon name="pin" />Fijado</span>
+          }
+          @if (canManage()) {
+            <span class="tag" [class.tag-green]="announcement.published && announcement.active">{{
+              !announcement.active ? 'Archivado' : announcement.published ? 'Publicado' : 'Borrador'
+            }}</span>
+          }
+        </div>
+        @if (canManage()) {
+          <div class="flex items-center gap-1">
+            <button
+              class="icon-btn"
+              [attr.aria-label]="
+                (announcement.pinned ? 'Desfijar ' : 'Fijar ') + announcement.title
+              "
+              [disabled]="busy()"
+              (click)="toggle(announcement, 'pinned')"
+            >
+              <app-course-icon name="pin" /></button
+            ><button
+              class="icon-btn"
+              [attr.aria-label]="'Editar ' + announcement.title"
+              [disabled]="busy()"
+              (click)="edit.emit({ mode: 'ANNOUNCEMENT', announcement })"
+            >
+              <app-course-icon name="edit" /></button
+            ><button
+              class="icon-btn danger"
+              [attr.aria-label]="'Eliminar ' + announcement.title"
+              [disabled]="busy()"
+              (click)="
+                edit.emit({
+                  mode: 'DELETE',
+                  kind: 'ANNOUNCEMENT',
+                  id: announcement.id,
+                  title: announcement.title,
+                })
+              "
+            >
+              <app-course-icon name="trash" />
+            </button>
+            @if (announcement.active) {
+              <button class="btn" [disabled]="busy()" (click)="toggle(announcement, 'published')">
+                {{ announcement.published ? 'Pasar a borrador' : 'Publicar' }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+      <h3 class="font-bold text-base mt-4 mb-3">{{ announcement.title }}</h3>
+      <div class="rich-body" [innerHTML]="announcement.body"></div>
+      @if (announcement.imageUrl) {
+        <app-file-attachment
+          [url]="announcement.imageUrl"
+          [preview]="true"
+          [label]="'Ver imagen: ' + announcement.title"
+        />
+      }
+      <div class="flex items-center gap-2 mt-5 pt-4 border-t border-app-border-subtle">
+        <span
+          class="w-7 h-7 flex items-center justify-center rounded-full bg-primary-soft text-primary font-bold text-[10px]"
+          >{{ initials(announcement.author) }}</span
+        >
+        <div>
+          <span class="text-xs font-semibold">{{ announcement.author }}</span
+          ><small class="block text-text-muted text-[10px]"
+            >{{ announcement.published ? 'Publicado' : 'Creado como borrador' }} ·
+            {{
+              announcement.publishedAt || announcement.createdAt | date: 'dd/MM/yyyy, HH:mm'
+            }}</small
+          >
+        </div>
+      </div>
+    </article>
+  } @empty {
+    <div class="empty">
+      <span class="empty-icon"><app-course-icon name="announcement" /></span>
+      <h3>
+        {{ canManage() ? 'Mantén al grupo informado' : 'Aquí encontrarás los avisos del curso' }}
+      </h3>
+      <p>
+        {{
+          canManage()
+            ? 'Redacta un anuncio, guárdalo como borrador o publícalo para tus alumnos.'
+            : 'Tu docente todavía no ha publicado anuncios en esta sección.'
+        }}
+      </p>
+      @if (canManage()) {
+        <button class="btn" (click)="edit.emit({ mode: 'ANNOUNCEMENT' })">Crear anuncio</button>
+      }
+    </div>
+  }
+</div>

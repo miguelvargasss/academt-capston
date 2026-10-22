@@ -1,0 +1,31 @@
+.pinned {
+  border-color: var(--color-primary-soft);
+  box-shadow: inset 3px 0 var(--color-primary);
+}
+.rich-body {
+  font-size: 0.8rem;
+  line-height: 1.9;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.rich-body ::ng-deep p {
+  margin: 0.5rem 0;
+}
+.rich-body ::ng-deep ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+}
+.rich-body ::ng-deep ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+}
+.rich-body ::ng-deep a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+.rich-body ::ng-deep blockquote {
+  border-left: 3px solid var(--color-primary-soft);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+}

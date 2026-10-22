@@ -1,0 +1,55 @@
+.email-field,
+.phone-field,
+.password-field {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--color-app-border);
+  background: var(--color-app-bg);
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+.email-field:focus-within,
+.phone-field:focus-within,
+.password-field:focus-within {
+  outline: 2px solid var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+.email-field input,
+.phone-field input,
+.password-field input {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  font-size: 0.8rem;
+}
+.email-field span,
+.phone-field span {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  padding: 0 0.8rem;
+  white-space: nowrap;
+}
+.email-field span {
+  padding-left: 0;
+}
+.phone-field span {
+  border-right: 1px solid var(--color-app-border);
+}
+.password-field button {
+  padding: 0.7rem 0.8rem;
+  color: var(--color-primary);
+  font-size: 0.7rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.body label:first-child {
+  margin-top: 0;
+}
+@media (max-width: 400px) {
+  .email-field span {
+    font-size: 0.65rem;
+    padding-right: 0.5rem;
+  }
+}

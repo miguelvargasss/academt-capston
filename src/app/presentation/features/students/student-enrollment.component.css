@@ -1,0 +1,90 @@
+.intro {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+.search {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--color-app-border);
+  border-radius: 0.65rem;
+  color: var(--color-text-muted);
+}
+.search input {
+  width: 100%;
+  min-width: 0;
+  outline: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-main);
+}
+.course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.course-option {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--color-app-border);
+  border-radius: 0.9rem;
+  margin: 0;
+  cursor: pointer;
+}
+.course-option.selected {
+  border-color: var(--color-primary);
+  background: #fff8f5;
+}
+.course-option > input {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+}
+.course-info {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.course-info strong {
+  font-size: 0.8rem;
+}
+.course-info small {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.65rem;
+  margin-top: 0.3rem;
+  font-weight: 400;
+}
+.tag {
+  font-size: 0.6rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  background: var(--color-app-bg);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.green {
+  color: #166534;
+  background: #dcfce7;
+}
+.orange {
+  color: var(--color-primary-dark);
+  background: var(--color-primary-soft);
+}
+.empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+@media (max-width: 480px) {
+  .course-option {
+    flex-wrap: wrap;
+  }
+  .badges {
+    margin-left: 1.8rem;
+  }
+}

@@ -1,0 +1,111 @@
+<div class="course-page" [attr.aria-busy]="loading()">
+  <div class="topline">
+    <a routerLink="/courses" class="back-link"><app-course-icon name="arrow" />Mis cursos</a>
+    <button class="text-button" (click)="refresh()" [disabled]="loading() || busy()">
+      <app-course-icon name="refresh" />Actualizar
+    </button>
+  </div>
+  @if (loadError()) {
+    <div class="alert error" role="alert">
+      <div>
+        <strong>No se pudo cargar el curso</strong>
+        <p>{{ loadError() }}</p>
+      </div>
+      <button class="text-button" (click)="refresh()">Reintentar</button>
+    </div>
+  }
+  @if (notice()) {
+    <div class="alert success" role="status"><app-course-icon name="check" />{{ notice() }}</div>
+  }
+  @if (actionError() && !editor() && !selectedResource()) {
+    <div class="alert error" role="alert">{{ actionError() }}</div>
+  }
+  @if (workspace(); as data) {
+    <app-course-header
+      [workspace]="data"
+      [activeTab]="tab()"
+      [tabs]="tabs()"
+      (scheduleRequested)="scheduleEditor.set(true)"
+    />
+    <div class="workspace-grid" [class.wide]="tab() === 'grades'">
+      <section class="workspace-main" aria-label="Área del curso">
+        @switch (tab()) {
+          @case ('content') {
+            <app-course-content
+              [workspace]="data"
+              [busy]="busy()"
+              (edit)="open($event)"
+              (view)="view($event)"
+              (publication)="publish($event)"
+              (currentWeek)="markCurrentWeek($event)"
+            />
+          }
+          @case ('students') {
+            <app-course-students
+              [workspace]="data"
+              [busy]="busy()"
+              (remove)="open({ mode: 'REMOVE_STUDENT', student: $event })"
+            />
+          }
+          @case ('announcements') {
+            <app-course-announcements
+              [workspace]="data"
+              [busy]="busy()"
+              (edit)="open($event)"
+              (save)="saveAnnouncement($event)"
+            />
+          }
+          @case ('grades') {
+            <app-course-gradebook
+              [workspace]="data"
+              [busy]="busy()"
+              (edit)="open($event)"
+              (view)="view($event)"
+              (contentRequested)="selectContent()"
+            />
+          }
+        }
+      </section>
+      @if (tab() !== 'grades') {
+        <app-course-metrics [workspace]="data" />
+      }
+    </div>
+    @if (scheduleEditor() && canManage()) {
+      <app-course-schedule-dialog
+        [courseId]="data.course.id"
+        [title]="data.course.title"
+        [legacy]="data.course.schedule"
+        (closed)="scheduleEditor.set(false)"
+        (saved)="scheduleEditor.set(false); refresh()"
+      />
+    }
+    @if (editor(); as state) {
+      <app-course-editor
+        [state]="state"
+        [workspace]="data"
+        [busy]="busy()"
+        [error]="actionError()"
+        (saved)="save($event)"
+        (closed)="closeEditor()"
+      />
+    }
+    @if (selectedResource(); as resource) {
+      <app-course-resource-viewer
+        [courseId]="data.course.id"
+        [resource]="resource"
+        [submission]="selectedSubmission()"
+        [completed]="selectedCompleted()"
+        [canManage]="canManage()"
+        [busy]="busy()"
+        [error]="actionError()"
+        (closed)="closeViewer()"
+        (complete)="complete($event)"
+        (send)="send($event)"
+      />
+    }
+  } @else if (loading()) {
+    <div class="loading-state" role="status">
+      <span class="loading-spinner"></span>Cargando el aula…
+    </div>
+  }
+</div>

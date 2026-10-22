@@ -1,0 +1,58 @@
+<div
+  class="upload-zone"
+  [class.dragging]="dragging()"
+  [class.is-disabled]="disabled() || uploading()"
+  [attr.aria-busy]="uploading()"
+  (dragover)="dragOver($event)"
+  (dragleave)="dragging.set(false)"
+  (drop)="drop($event)"
+  role="group"
+  aria-label="Adjuntar archivo"
+>
+  <input
+    #picker
+    class="file-input"
+    type="file"
+    [accept]="accept()"
+    [disabled]="disabled() || uploading() || !courseId()"
+    (change)="select($event)"
+    aria-label="Seleccionar archivo del dispositivo"
+  />
+  @if (uploading()) {
+    <span class="upload-spinner" aria-hidden="true"></span
+    ><strong role="status">Subiendo tu archivo…</strong>
+    <p>Espera a que termine antes de guardar o enviar.</p>
+    <div class="upload-progress" role="progressbar" aria-label="Subida en curso"><span></span></div>
+  } @else {
+    <span class="upload-icon"><app-course-icon name="upload" /></span>
+    <strong>{{
+      dragging()
+        ? 'Suelta el archivo para adjuntarlo'
+        : imagesOnly()
+          ? 'Arrastra una imagen aquí'
+          : 'Arrastra tu archivo aquí'
+    }}</strong>
+    <p>
+      {{
+        imagesOnly() ? 'JPG, PNG, GIF o WebP' : 'PDF, Word, Excel, PowerPoint, TXT o una imagen'
+      }}
+      · Hasta 20 MB
+    </p>
+    <button
+      type="button"
+      class="choose-file"
+      [disabled]="disabled() || !courseId()"
+      (click)="picker.click()"
+    >
+      <app-course-icon name="plus" />Seleccionar archivo
+    </button>
+    @if (filename()) {
+      <span class="uploaded-name" role="status"
+        ><app-course-icon name="check" />Subido: {{ filename() }}</span
+      >
+    }
+  }
+</div>
+@if (error()) {
+  <p class="upload-error" role="alert">{{ error() }}</p>
+}

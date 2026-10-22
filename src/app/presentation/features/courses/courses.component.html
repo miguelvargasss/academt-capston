@@ -1,0 +1,500 @@
+<div class="space-y-6 animate-fadeIn">
+  <!-- Encabezado de la Sección -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-text-main">Mis Cursos y Programas</h1>
+      <p class="text-xs text-text-secondary mt-1">
+        {{
+          userRole() === 'DOCENTE'
+            ? 'Gestiona tus cursos a cargo, materiales y nuevas aperturas académicas'
+            : 'Accede a tus materiales, grabaciones y lecciones programadas'
+        }}
+      </p>
+    </div>
+
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+      <!-- Barra de Búsqueda -->
+      <div class="relative flex-1 sm:w-64">
+        <input
+          type="text"
+          (input)="onSearch($event)"
+          placeholder="Buscar por nombre o tema..."
+          class="w-full px-3.5 py-2 pl-9 rounded-xl border border-app-border bg-white text-xs text-text-main focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-text-muted shadow-2xs"
+        />
+        <svg
+          class="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" x2="21" y1="21" y2="16.65" />
+        </svg>
+      </div>
+
+      <!-- Botón para Docentes: Crear Nuevo Curso -->
+      @if (userRole() === 'DOCENTE' || userRole() === 'ADMINISTRADOR') {
+        <button
+          (click)="openCreateModal()"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:bg-primary-dark text-white text-xs font-semibold shadow-md shadow-primary/20 transition-all cursor-pointer whitespace-nowrap"
+        >
+          <svg
+            class="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>Crear Nuevo Curso</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Filtros por Nivel CEFR -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1">
+    <button
+      (click)="setFilter('TODOS')"
+      [class]="
+        selectedFilter() === 'TODOS'
+          ? 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sidebar text-white shadow-xs transition-all'
+          : 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white text-text-secondary border border-app-border hover:bg-app-bg transition-all'
+      "
+    >
+      Todos los niveles
+    </button>
+    <button
+      (click)="setFilter('B1')"
+      [class]="
+        selectedFilter() === 'B1'
+          ? 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sidebar text-white shadow-xs transition-all'
+          : 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white text-text-secondary border border-app-border hover:bg-app-bg transition-all'
+      "
+    >
+      Nivel B1 (Intermediate)
+    </button>
+    <button
+      (click)="setFilter('B2')"
+      [class]="
+        selectedFilter() === 'B2'
+          ? 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sidebar text-white shadow-xs transition-all'
+          : 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white text-text-secondary border border-app-border hover:bg-app-bg transition-all'
+      "
+    >
+      Nivel B2 (Upper Intermediate)
+    </button>
+    <button
+      (click)="setFilter('C1')"
+      [class]="
+        selectedFilter() === 'C1'
+          ? 'px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sidebar text-white shadow-xs transition-all'
+          : 'px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white text-text-secondary border border-app-border hover:bg-app-bg transition-all'
+      "
+    >
+      Nivel C1 (Advanced)
+    </button>
+  </div>
+
+  @if (loadError()) {
+    <div
+      class="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800 flex items-center justify-between gap-3"
+      role="alert"
+    >
+      <span>{{ loadError() }}</span
+      ><button class="font-semibold underline" (click)="loadCourses()">Reintentar</button>
+    </div>
+  }
+  @if (isLoading()) {
+    <p class="text-xs text-text-secondary py-4" role="status">Cargando tus cursos…</p>
+  }
+  <!-- Grid de Cursos (Tarjetas con Tokens de Kelly Academy) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    @for (course of filteredCourses(); track course.id) {
+      <div
+        class="bg-white rounded-2xl border border-app-border p-6 shadow-card hover:border-primary/40 transition-all flex flex-col justify-between group"
+      >
+        <div>
+          <!-- Cabecera de la tarjeta: Badge CEFR y Estado -->
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <app-badge variant="soft">{{ course.levelCefr }} &bull; CEFR</app-badge>
+            <span class="text-[11px] text-text-muted font-medium flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              {{ statusLabels[course.status] }}
+            </span>
+          </div>
+
+          <!-- Título y Descripción -->
+          <h2 class="text-base font-bold text-text-main group-hover:text-primary transition-colors">
+            {{ course.title }}
+          </h2>
+          <p class="text-xs text-text-secondary mt-1.5 line-clamp-2 leading-relaxed">
+            {{ course.description }}
+          </p>
+
+          <!-- Barra de Progreso -->
+          @if (course.progressPercentage !== null) {
+            <div class="mt-5">
+              <div class="flex items-center justify-between text-xs mb-1.5">
+                <span class="text-text-muted font-medium">Progreso del curso</span>
+                <span class="font-bold text-text-main">{{ course.progressPercentage }}%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-primary-soft overflow-hidden">
+                <div
+                  class="h-full bg-primary rounded-full transition-all duration-700"
+                  [style.width.%]="course.progressPercentage"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Footer de la Tarjeta con Profesor y Botón de Acción -->
+        <div
+          class="pt-5 mt-5 border-t border-app-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-8 h-8 rounded-full bg-primary-soft text-primary-dark font-bold text-xs flex items-center justify-center border border-primary/20"
+            >
+              {{ getTeacherInitials(course.teacherName) }}
+            </div>
+            <div class="flex flex-col">
+              <span class="text-xs font-semibold text-text-main">{{ course.teacherName }}</span>
+              @if (course.totalHours !== null) {
+                <span class="text-[11px] text-text-muted"
+                  >{{ course.totalHours }} horas académicas</span
+                >
+              }
+              @if (course.nextLesson) {
+                <span class="text-[11px] text-text-muted">{{ course.nextLesson }}</span>
+              }
+            </div>
+          </div>
+
+          <a
+            [routerLink]="['/courses', course.id]"
+            [attr.aria-label]="'Entrar al curso ' + course.title"
+            class="px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover active:bg-primary-dark text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>{{ userRole() === 'ESTUDIANTE' ? 'Entrar al curso' : 'Gestionar curso' }}</span>
+            <svg
+              class="w-3.5 h-3.5 stroke-[2]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    } @empty {
+      @if (!isLoading() && !loadError()) {
+        <div
+          class="col-span-2 bg-white rounded-2xl border border-app-border p-12 text-center shadow-card"
+        >
+          <div
+            class="w-12 h-12 rounded-full bg-primary-soft text-primary flex items-center justify-center mx-auto mb-3"
+          >
+            <svg
+              class="w-6 h-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" x2="21" y1="21" y2="16.65" />
+            </svg>
+          </div>
+          <h3 class="text-sm font-bold text-text-main">No se encontraron cursos</h3>
+          <p class="text-xs text-text-secondary mt-1">
+            Prueba cambiando los filtros de nivel o la palabra de búsqueda.
+          </p>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Modal Flotante Cuestionario: Crear Nuevo Curso -->
+  @if (isCreateModalOpen()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm transition-all animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <!-- Card Flotante -->
+      <div
+        class="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-app-border overflow-hidden flex flex-col max-h-[92vh]"
+      >
+        <!-- Header con botón cerrar -->
+        <div
+          class="px-6 sm:px-8 pt-6 pb-5 border-b border-app-border-subtle bg-app-surface/50 flex items-start justify-between gap-4"
+        >
+          <div>
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-soft text-primary-dark border border-primary/20"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M12 4v16m8-8H4" />
+                </svg>
+                Nuevo Programa
+              </span>
+              <span class="text-xs text-text-muted">Kelly Academy LMS</span>
+            </div>
+            <h2 id="modal-title" class="text-xl font-black text-text-main mt-1 tracking-tight">
+              Crear Nuevo Curso
+            </h2>
+            <p class="text-xs text-text-secondary mt-0.5">
+              Define las características pedagógicas, nivel y cronograma del nuevo curso.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            (click)="closeCreateModal()"
+            class="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-text-main hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-app-border"
+            title="Cerrar ventana"
+          >
+            <svg
+              class="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Mensajes de feedback -->
+        @if (errorMessage()) {
+          <div
+            class="mx-6 sm:mx-8 mt-4 p-3 rounded-xl bg-danger-soft border border-danger/20 flex items-center gap-2.5 text-danger-dark text-xs"
+          >
+            <svg
+              class="w-4 h-4 shrink-0 text-danger"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        @if (successMessage()) {
+          <div
+            class="mx-6 sm:mx-8 mt-4 p-3 rounded-xl bg-success-soft border border-success/20 flex items-center gap-2.5 text-success-dark text-xs"
+          >
+            <svg
+              class="w-4 h-4 shrink-0 text-success"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+            <span>{{ successMessage() }}</span>
+          </div>
+        }
+
+        <!-- Formulario Cuestionario -->
+        <form
+          [formGroup]="courseForm"
+          (ngSubmit)="onSubmitCreateCourse()"
+          class="flex-1 overflow-y-auto px-6 sm:px-8 py-5 space-y-5"
+          [inert]="isSubmitting()"
+        >
+          <!-- Título del Curso -->
+          <div>
+            <label class="block text-xs font-bold text-text-main mb-1.5">
+              Título del Curso <span class="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              formControlName="titulo"
+              placeholder="Ej. Business English: Executive Negotiations & Pitching"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-app-border bg-white text-xs text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+            />
+            @if (
+              courseForm.get('titulo')?.touched && courseForm.get('titulo')?.errors?.['required']
+            ) {
+              <p class="text-[11px] text-danger mt-1 font-medium">
+                El título del curso es obligatorio.
+              </p>
+            }
+          </div>
+
+          <!-- Selector Nivel CEFR (Cuestionario / Cards Interactivas) -->
+          <div>
+            <label class="block text-xs font-bold text-text-main mb-1.5">
+              Nivel Marco Común Europeo (CEFR) <span class="text-danger">*</span>
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              @for (lvl of cefrOptions; track lvl.code) {
+                <button
+                  type="button"
+                  (click)="selectCefrLevel(lvl.code)"
+                  class="p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between"
+                  [ngClass]="{
+                    'border-primary bg-primary-soft/60 shadow-xs ring-1 ring-primary/20':
+                      courseForm.get('nivelCefr')?.value === lvl.code,
+                    'border-app-border bg-white hover:border-slate-300 hover:bg-slate-50/50':
+                      courseForm.get('nivelCefr')?.value !== lvl.code,
+                  }"
+                >
+                  <div class="flex items-center justify-between">
+                    <span
+                      class="font-bold text-xs"
+                      [ngClass]="
+                        courseForm.get('nivelCefr')?.value === lvl.code
+                          ? 'text-primary-dark'
+                          : 'text-text-main'
+                      "
+                    >
+                      {{ lvl.code }}
+                    </span>
+                    @if (courseForm.get('nivelCefr')?.value === lvl.code) {
+                      <span class="w-2 h-2 rounded-full bg-primary"></span>
+                    }
+                  </div>
+                  <p class="text-[10px] text-text-muted mt-1 leading-tight line-clamp-2">
+                    {{ lvl.desc }}
+                  </p>
+                </button>
+              }
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-text-main mb-2"
+              >Horario de clases <span class="text-primary">*</span></label
+            ><app-course-schedule-fields
+              formControlName="horarios"
+              [showErrors]="courseForm.controls.horarios.touched"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-text-main mb-1.5"
+              >Capacidad máxima (alumnos) <span class="text-primary">*</span></label
+            ><input
+              type="number"
+              min="1"
+              formControlName="capacidadMaxima"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-app-border bg-white text-xs text-text-main focus:outline-none focus:border-primary"
+            />
+          </div>
+          <!-- Fechas Inicio y Fin -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-text-main mb-1.5">
+                Fecha de inicio <span class="text-primary">*</span></label
+              >
+              <input
+                type="date"
+                formControlName="fechaInicio"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-app-border bg-white text-xs text-text-main focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-text-main mb-1.5">
+                Fecha de Finalización
+              </label>
+              <input
+                type="date"
+                formControlName="fechaFin"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-app-border bg-white text-xs text-text-main focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all font-medium"
+              />
+            </div>
+          </div>
+
+          <!-- Descripción / Objetivos del Curso -->
+          <div>
+            <label class="block text-xs font-bold text-text-main mb-1.5">
+              Descripción y Objetivos del Curso
+            </label>
+            <textarea
+              rows="3"
+              formControlName="descripcion"
+              placeholder="Describe las metas de aprendizaje, metodología y requerimientos para los estudiantes..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-app-border bg-white text-xs text-text-main placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all font-medium resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Footer con botones -->
+          <div class="pt-4 border-t border-app-border-subtle flex items-center justify-end gap-3">
+            <button
+              type="button"
+              (click)="closeCreateModal()"
+              [disabled]="isSubmitting()"
+              class="px-4 py-2.5 rounded-xl border border-app-border bg-white text-text-secondary hover:text-text-main hover:bg-slate-50 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="isSubmitting()"
+              class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover active:bg-primary-dark text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              @if (isSubmitting()) {
+                <svg
+                  class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span>Creando curso...</span>
+              } @else {
+                <svg
+                  class="w-3.5 h-3.5 stroke-[2.5]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Crear y Publicar Curso</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

@@ -1,10 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
+import { Router } from '@angular/router';
+import { appConfig } from './app.config';
 
 describe('App', () => {
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: appConfig.providers,
     }).compileComponents();
   });
 
@@ -14,10 +18,14 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('redirects unauthenticated users from courses to the login form', async () => {
     const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/courses');
+    fixture.detectChanges();
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, frontend.kellyAcademy');
+    expect(router.url).toBe('/login');
+    expect(compiled.querySelector('input[type="email"]')).toBeTruthy();
   });
 });

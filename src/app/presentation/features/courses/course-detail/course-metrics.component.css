@@ -1,0 +1,133 @@
+:host {
+  display: block;
+}
+h2 {
+  font-weight: 750;
+}
+.metric-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.aside-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.metrics-card,
+.info-card {
+  border: 1px solid var(--color-app-border);
+  border-radius: 1rem;
+  background: white;
+  overflow: hidden;
+}
+.small-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border-radius: 0.75rem;
+  flex-shrink: 0;
+}
+.metrics-card,
+.info-card {
+  padding: 1.3rem;
+}
+.metrics-card {
+  box-shadow: var(--shadow-card);
+}
+.aside-heading h2,
+.info-card h2 {
+  font-size: 0.75rem;
+}
+.small-symbol {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+.metric {
+  padding: 1.2rem 0;
+  border-bottom: 1px solid var(--color-app-border-subtle);
+}
+.metric:last-child {
+  padding-bottom: 0;
+  border: 0;
+}
+.metric > span,
+.metric-label > span {
+  color: var(--color-text-secondary);
+}
+.metric > strong {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 750;
+  margin-top: 0.35rem;
+}
+.metric strong small,
+.metric > small {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.metric-percentage {
+  font-size: 1.1rem;
+  font-weight: 750;
+  color: var(--color-primary);
+}
+.progress-track {
+  height: 0.35rem;
+  background: var(--color-app-bg);
+  border-radius: 1rem;
+  margin: 0.65rem 0 0.25rem;
+  overflow: hidden;
+}
+.progress-track span {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+.metric > .attendance {
+  font-size: 1.05rem;
+}
+.info-card {
+  margin-top: 1rem;
+}
+.info-card dl {
+  margin-top: 0.9rem;
+}
+.info-card dl > div,
+.course-dates p {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+}
+.info-card dt {
+  color: var(--color-text-secondary);
+}
+.info-card dd {
+  font-weight: 650;
+}
+.course-dates {
+  border-top: 1px solid var(--color-app-border-subtle);
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  font-size: 0.65rem;
+}
+@media (max-width: 1100px) {
+  .course-aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}
+@media (max-width: 1100px) {
+  .info-card {
+    margin: 0;
+  }
+}
+@media (max-width: 640px) {
+  .course-aside {
+    grid-template-columns: 1fr;
+  }
+}

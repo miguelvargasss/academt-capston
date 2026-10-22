@@ -1,0 +1,111 @@
+.summary {
+  padding: 1rem;
+  background: white;
+  border: 1px solid var(--color-app-border);
+  border-radius: 0.8rem;
+}
+.summary > span {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+}
+.summary > strong {
+  display: block;
+  font-size: 1.5rem;
+  margin-top: 0.5rem;
+}
+.gradebook-wrap {
+  border: 1px solid var(--color-app-border);
+  border-radius: 1rem;
+  overflow: auto;
+  background: white;
+}
+.gradebook {
+  width: 100%;
+  text-align: left;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.gradebook th,
+.gradebook td {
+  padding: 0.9rem;
+  min-width: 9rem;
+  border-bottom: 1px solid var(--color-app-border-subtle);
+  vertical-align: middle;
+}
+.gradebook thead th {
+  background: #fcfbf8;
+  font-size: 0.7rem;
+}
+.gradebook strong {
+  font-weight: 650;
+}
+.gradebook small {
+  display: block;
+  font-size: 0.63rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.3rem;
+}
+.student-col {
+  position: sticky;
+  left: 0;
+  min-width: 12rem !important;
+  background: white;
+  z-index: 1;
+  box-shadow: 1px 0 var(--color-app-border-subtle);
+}
+thead .student-col {
+  z-index: 2;
+}
+.gradebook tbody th {
+  font-weight: 400;
+}
+.grade-cell {
+  width: 100%;
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  background: var(--color-app-bg);
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  cursor: pointer;
+}
+.grade-cell:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.grade-cell:not(:disabled):hover {
+  border-color: var(--color-primary);
+}
+.grade-cell.graded {
+  background: #edf7ef;
+  color: #277343;
+}
+.grade-cell.overdue {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.grade-cell strong {
+  font-size: 1rem;
+}
+.grade-cell strong span {
+  font-size: 0.65rem;
+  font-weight: 400;
+}
+.feedback {
+  background: var(--color-app-bg);
+  border-left: 3px solid var(--color-primary-soft);
+  padding: 0.8rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+.feedback p {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  margin-top: 0.4rem;
+}
+.feedback small {
+  display: block;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+}
