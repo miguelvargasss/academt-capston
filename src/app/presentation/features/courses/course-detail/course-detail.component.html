@@ -38,6 +38,8 @@
               (view)="view($event)"
               (publication)="publish($event)"
               (currentWeek)="markCurrentWeek($event)"
+              (reorderUnits)="reorderUnits($event)"
+              (reorderWeeks)="reorderWeeks($event)"
             />
           }
           @case ('students') {
@@ -45,6 +47,7 @@
               [workspace]="data"
               [busy]="busy()"
               (remove)="open({ mode: 'REMOVE_STUDENT', student: $event })"
+              (changed)="refresh()"
             />
           }
           @case ('announcements') {

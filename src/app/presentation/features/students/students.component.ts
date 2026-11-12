@@ -2,7 +2,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, Subscription, timer } from 'rxjs';
-import { ManageStudentsUseCase } from '../../../application/students/manage-students.use-case';
+import { ManageStudentsUseCase, StudentStatusUpdateError } from '../../../application/students/manage-students.use-case';
 import {
   CreateStudentCommand,
   Student,
@@ -184,7 +184,6 @@ export class StudentsComponent {
             whatsAppUrl: credentialsWhatsAppUrl(
               student.fullName,
               student.email,
-              command.password,
               student.phone!,
               `${origin}/login`,
             ),
@@ -284,7 +283,9 @@ export class StudentsComponent {
       },
       error: (error) => {
         this.busy.set(false);
-        this.actionError.set(apiErrorMessage(error, 'No se pudieron guardar los cambios.'));
+        this.actionError.set(error instanceof StudentStatusUpdateError
+          ? error.message
+          : apiErrorMessage(error, 'No se pudieron guardar los cambios.'));
         if (reloadOnError) this.load();
       },
     });

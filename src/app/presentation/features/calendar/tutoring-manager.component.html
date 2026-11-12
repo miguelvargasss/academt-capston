@@ -1,0 +1,71 @@
+<section aria-labelledby="tutoring-heading" class="space-y-6 bg-white p-5 rounded-2xl border border-app-border">
+  <div><h2 id="tutoring-heading" class="text-lg font-bold">Tutorías y disponibilidad</h2><p class="text-sm text-text-secondary">Horarios en la zona de Lima.</p></div>
+  @if (error()) { <p role="alert" class="rounded-lg bg-red-50 text-red-800 p-3 text-sm">{{ error() }}</p> }
+  @if (notice()) { <p role="status" class="text-sm text-green-700">{{ notice() }}</p> }
+
+  @if (canManageBlocks) {
+    <section aria-labelledby="availability-heading" class="space-y-3">
+      <h3 id="availability-heading" class="font-semibold">Disponibilidad semanal</h3>
+      @if (storage.isAdmin()) {
+        <label class="block text-sm">Docente<select [value]="selectedTeacher()" (change)="selectTeacher($event)" [disabled]="busy()" class="block w-full mt-1 rounded-lg border border-app-border p-2"><option value="">Selecciona un docente</option>@if (isTeacher) { <option [value]="storage.currentUser()?.id">Mi disponibilidad</option> }@for (teacher of selectableTeachers; track teacher.id) { <option [value]="teacher.id">{{ teacher.nombre }} {{ teacher.apellido }}</option> }</select></label>
+        @if (teacherPage(); as teacherResults) { @if (teacherResults.number + 1 < teacherResults.totalPages) { <button type="button" [disabled]="loadingTeachers()" (click)="loadTeachers(teacherResults.number + 1)" class="text-sm text-primary">Cargar más docentes</button> } }
+      }
+      @if (!selectedTeacher()) { <p class="text-sm text-text-secondary">Selecciona un docente para administrar sus bloques.</p> }
+      @if (loadingBlocks()) { <p role="status" class="text-sm">Cargando disponibilidad…</p> }
+      @if (blocks(); as result) {
+        @for (block of result.content; track block.id) {
+          <div class="flex flex-wrap justify-between items-center gap-3 border border-app-border rounded-lg p-3 text-sm"><span>{{ day(block.diaSemana) }} · {{ block.horaInicio.slice(0, 5) }}–{{ block.horaFin.slice(0, 5) }} · {{ block.bloqueada ? 'Bloqueada' : 'Disponible' }}</span><div class="flex gap-3"><button type="button" [disabled]="busy()" (click)="edit(block)" class="text-primary font-semibold">Editar<span class="sr-only"> {{ day(block.diaSemana) }} {{ block.horaInicio }}</span></button>@if (storage.isAdmin()) { <button type="button" [disabled]="busy()" (click)="removeBlock(block)" class="text-red-700">{{ deletingBlock() === block.id ? 'Confirmar eliminación' : 'Eliminar' }}<span class="sr-only"> {{ day(block.diaSemana) }} {{ block.horaInicio }}</span></button> }</div></div>
+        } @empty { <p class="text-sm text-text-secondary">Todavía no registras bloques de disponibilidad.</p> }
+        <div class="flex items-center gap-4 text-sm"><button type="button" [disabled]="loadingBlocks() || result.number <= 0" (click)="loadBlocks(result.number - 1)" class="disabled:opacity-50">Anterior</button><span>{{ result.totalPages ? result.number + 1 : 0 }} / {{ result.totalPages }}</span><button type="button" [disabled]="loadingBlocks() || result.number + 1 >= result.totalPages" (click)="loadBlocks(result.number + 1)" class="disabled:opacity-50">Siguiente</button></div>
+      }
+      @if (selectedTeacher()) { <form [formGroup]="availabilityForm" (ngSubmit)="saveBlock()" class="border border-app-border rounded-lg p-4 space-y-3">
+        <h4 class="text-sm font-semibold">{{ editing() ? 'Editar bloque' : 'Agregar bloque' }}</h4>
+        <div class="grid sm:grid-cols-3 gap-3"><label class="text-sm">Día<select formControlName="diaSemana" class="block w-full mt-1 rounded-lg border border-app-border p-2">@for (day of days; track day.value) { <option [value]="day.value">{{ day.label }}</option> }</select></label><label class="text-sm">Desde<input type="time" formControlName="horaInicio" required class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label><label class="text-sm">Hasta<input type="time" formControlName="horaFin" required class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label></div>
+        @if (availabilityForm.touched && availabilityForm.invalid) { <p role="alert" class="text-sm text-red-700">Completa el día y las horas del bloque.</p> }
+        @if (editing()) { <label class="flex items-center gap-2 text-sm"><input type="checkbox" formControlName="bloqueada" />Bloquear temporalmente este horario</label> }
+        <div class="flex gap-4"><button type="submit" [disabled]="busy()" class="rounded-lg bg-primary px-4 py-2 text-white text-sm font-semibold disabled:opacity-50">Guardar disponibilidad</button>@if (editing()) { <button type="button" [disabled]="busy()" (click)="cancelEdit()" class="text-sm">Cancelar edición</button> }</div>
+      </form> }
+    </section>
+  }
+
+  @if (isStudent) {
+    <form [formGroup]="tutoringForm" (ngSubmit)="requestTutoring()" class="border border-app-border rounded-lg p-4 space-y-3">
+      <h3 class="font-semibold">Solicitar tutoría</h3>
+      <label class="block text-sm">Curso<select formControlName="cursoId" (change)="selectCourse()" required class="block w-full mt-1 rounded-lg border border-app-border p-2"><option value="">Selecciona un curso</option>@for (course of courses(); track course.id) { <option [value]="course.id">{{ course.titulo }}</option> }</select></label>
+      @if (loadingAvailable()) { <p role="status" class="text-sm">Cargando horarios del docente…</p> }
+      @if (tutoringForm.controls.cursoId.value && !loadingAvailable()) {
+        <div class="text-sm text-text-secondary"><p>Disponibilidad semanal del docente:</p>@for (block of available(); track block.id) { <span class="inline-block mr-3">{{ day(block.diaSemana) }} {{ block.horaInicio.slice(0, 5) }}–{{ block.horaFin.slice(0, 5) }}</span> } @empty { <p>No hay bloques disponibles.</p> }</div>
+      }
+      <div class="grid sm:grid-cols-2 gap-3"><label class="text-sm">Fecha y hora<input type="datetime-local" formControlName="fecha" required class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label><label class="text-sm">Duración en minutos<input type="number" min="15" max="240" step="1" formControlName="duracionMinutos" required class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label></div>
+      @if (tutoringForm.touched && tutoringForm.invalid) { <p role="alert" class="text-sm text-red-700">Selecciona curso y fecha y una duración de 15 a 240 minutos.</p> }
+      <button type="submit" [disabled]="busy() || loadingAvailable()" class="rounded-lg bg-primary px-4 py-2 text-white text-sm font-semibold disabled:opacity-50">Solicitar tutoría</button>
+    </form>
+  }
+
+  <section aria-labelledby="my-tutorings-heading" class="space-y-3">
+    <h3 id="my-tutorings-heading" class="font-semibold">Tutorías</h3>
+    @if (loadingTutorings()) { <p role="status" class="text-sm">Cargando tutorías…</p> }
+    @if (tutorings(); as result) {
+      @for (item of result.content; track item.id) {
+        <article class="border border-app-border rounded-lg p-3 text-sm space-y-2"><p class="font-semibold">{{ item.estudianteNombreCompleto }} · {{ item.docenteNombreCompleto }}</p><p>{{ item.cursoTitulo || 'Sin curso' }} · {{ item.fecha.replace('T', ' ').slice(0, 16) }} · {{ item.duracionMinutos }} minutos · {{ item.estado }}</p><div class="flex flex-wrap gap-4">
+          @if (canEditTutoring(item)) { <button type="button" [disabled]="busy() || loadingDetails()" (click)="openTutoring(item)" class="text-primary font-semibold">Editar<span class="sr-only"> tutoría de {{ item.estudianteNombreCompleto }}</span></button> }
+          @if (item.estado === 'PENDIENTE' && (storage.isAdmin() || storage.currentUser()?.id === item.estudianteId || storage.currentUser()?.id === item.docenteId)) { <button type="button" [disabled]="busy()" (click)="changeStatus(item, 'CONFIRMADA')" class="text-primary font-semibold">Confirmar</button> }
+          @if (item.estado === 'CONFIRMADA' && (storage.isAdmin() || storage.currentUser()?.id === item.docenteId)) { <button type="button" [disabled]="busy()" (click)="changeStatus(item, 'COMPLETADA')" class="text-primary font-semibold">Marcar completada</button> }
+          @if ((item.estado === 'PENDIENTE' || item.estado === 'CONFIRMADA') && (storage.isAdmin() || storage.currentUser()?.id === item.estudianteId || storage.currentUser()?.id === item.docenteId)) { <button type="button" [disabled]="busy()" (click)="changeStatus(item, 'CANCELADA')" class="text-red-700 font-semibold">Cancelar tutoría</button> }
+        </div></article>
+      } @empty { <p class="text-sm text-text-secondary">No hay tutorías registradas.</p> }
+      <div class="flex items-center gap-4 text-sm"><button type="button" [disabled]="loadingTutorings() || result.number <= 0" (click)="loadTutorings(result.number - 1)" class="disabled:opacity-50">Anterior</button><span>{{ result.totalPages ? result.number + 1 : 0 }} / {{ result.totalPages }}</span><button type="button" [disabled]="loadingTutorings() || result.number + 1 >= result.totalPages" (click)="loadTutorings(result.number + 1)" class="disabled:opacity-50">Siguiente</button></div>
+    }
+  </section>
+  @if (loadingDetails()) { <p role="status" class="text-sm">Cargando detalle de tutoría…</p> }
+  @if (editingTutoring(); as item) {
+    <form [formGroup]="editTutoringForm" (ngSubmit)="saveTutoring()" class="border border-app-border rounded-lg p-4 space-y-3">
+      <h3 class="font-semibold">Editar tutoría de {{ item.estudianteNombreCompleto }}</h3>
+      @if (item.estado !== 'PENDIENTE') { <p class="text-sm text-text-secondary">Solo se pueden modificar fecha y duración mientras la tutoría está pendiente.</p> }
+      <div class="grid sm:grid-cols-2 gap-3"><label class="text-sm">Fecha y hora<input type="datetime-local" formControlName="fecha" [readOnly]="item.estado !== 'PENDIENTE'" required class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label><label class="text-sm">Duración en minutos<input type="number" min="15" max="240" step="1" formControlName="duracionMinutos" [readOnly]="item.estado !== 'PENDIENTE'" required class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label></div>
+      <label class="block text-sm">Notas<textarea formControlName="notas" rows="3" class="block w-full mt-1 rounded-lg border border-app-border p-2"></textarea></label>
+      @if (editTutoringForm.touched && editTutoringForm.invalid) { <p role="alert" class="text-sm text-red-700">Completa la fecha y una duración entre 15 y 240 minutos.</p> }
+      <div class="flex gap-4"><button type="submit" [disabled]="busy()" class="rounded-lg bg-primary px-4 py-2 text-white text-sm font-semibold disabled:opacity-50">Guardar tutoría</button><button type="button" [disabled]="busy()" (click)="editingTutoring.set(null)" class="text-sm">Cancelar edición</button></div>
+    </form>
+  }
+</section>

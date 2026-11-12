@@ -22,9 +22,10 @@
       (input)="search($event)"
   /></label>
 }
+@if (canManage() && query()) { <p class="text-sm text-text-secondary mb-3">Limpia la búsqueda para reorganizar el contenido.</p> }
 <div class="space-y-5">
-  @for (unit of filtered(); track unit.id) {
-    <section>
+  @for (unit of filtered(); track unit.id; let unitIndex = $index) {
+    <section (dragover)="dragOver($event, 'unit')" (drop)="drop($event, 'unit', unit.id)">
       <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div class="flex gap-3 items-center min-w-0">
           <span class="text-primary text-xs font-bold">{{ unit.number | number: '2.0-0' }}</span>
@@ -37,6 +38,9 @@
         </div>
         @if (canManage()) {
           <div class="flex items-center gap-1">
+            <button type="button" class="icon-btn" [attr.draggable]="canReorder()" [disabled]="!canReorder()" [attr.aria-label]="'Arrastrar módulo ' + unit.title" title="Arrastrar para reordenar" (dragstart)="dragStart($event, 'unit', unit.id)" (dragend)="dragEnd()">⋮⋮</button>
+            <button type="button" class="icon-btn" [disabled]="!canReorder() || unitIndex === 0" [attr.aria-label]="'Subir módulo ' + unit.title" (click)="moveUnit(unit.id, -1)">↑</button>
+            <button type="button" class="icon-btn" [disabled]="!canReorder() || unitIndex === data.units.length - 1" [attr.aria-label]="'Bajar módulo ' + unit.title" (click)="moveUnit(unit.id, 1)">↓</button>
             <button
               class="icon-btn"
               [attr.aria-label]="'Editar módulo ' + unit.title"
@@ -59,9 +63,11 @@
         }
       </div>
       <div class="space-y-3">
-        @for (week of unit.weeks; track week.id) {
+        @for (week of unit.weeks; track week.id; let weekIndex = $index) {
           <article
             class="border border-app-border bg-white rounded-2xl overflow-hidden shadow-subtle"
+            (dragover)="dragOver($event, 'week', unit.id)"
+            (drop)="drop($event, 'week', week.id, unit.id)"
           >
             <div class="flex items-center justify-between gap-3 p-4 sm:p-5">
               <button
@@ -87,6 +93,9 @@
               </button>
               <div class="flex items-center gap-1">
                 @if (canManage()) {
+                  <button type="button" class="icon-btn" [attr.draggable]="canReorder()" [disabled]="!canReorder()" [attr.aria-label]="'Arrastrar semana ' + week.title" title="Arrastrar para reordenar" (dragstart)="dragStart($event, 'week', week.id, unit.id)" (dragend)="dragEnd()">⋮⋮</button>
+                  <button type="button" class="icon-btn" [disabled]="!canReorder() || weekIndex === 0" [attr.aria-label]="'Subir semana ' + week.title" (click)="moveWeek(unit, week.id, -1)">↑</button>
+                  <button type="button" class="icon-btn" [disabled]="!canReorder() || weekIndex === unit.weeks.length - 1" [attr.aria-label]="'Bajar semana ' + week.title" (click)="moveWeek(unit, week.id, 1)">↓</button>
                   <button
                     class="icon-btn"
                     [attr.aria-label]="'Agregar recurso a ' + week.title"

@@ -1,5 +1,6 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '../config/environment';
@@ -12,7 +13,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   let isBackend = false;
   try {
-    isBackend = new URL(req.url, environment.apiUrl).origin === new URL(environment.apiUrl).origin;
+    isBackend = new URL(req.url, inject(DOCUMENT).baseURI).origin === new URL(environment.apiUrl).origin;
   } catch {
     /* Enlace inválido */
   }
@@ -28,6 +29,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (isBackend && error.status === 401 && !req.url.includes('/auth/login')) {
         tokenStorage.clearSession();
         router.navigate(['/login']);
+      }
+      if (isBackend && error.status === 403 && error.error?.codigo === 'TERMINOS_PENDIENTES') {
+        router.navigate(['/terminos']);
       }
       return throwError(() => error);
     }),

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { StudentHttpRepository } from './student-http.repository';
-import { ManageStudentsUseCase } from '../../application/students/manage-students.use-case';
+import { ManageStudentsUseCase, StudentStatusUpdateError } from '../../application/students/manage-students.use-case';
 import { STUDENT_REPOSITORY } from '../../core/tokens/repository.tokens';
 import { environment } from '../../core/config/environment';
 import { Student } from '../../domain/models/student.model';
@@ -116,6 +116,17 @@ describe('Teacher student API contracts', () => {
     expect(status.request.body).toEqual({ estado: 'SUSPENDIDO' });
     status.flush({ ...dto, estado: 'SUSPENDIDO' });
   });
+  it('reports that basic data was saved if the status request fails', () => {
+    let received: unknown;
+    manage.update({
+      id: 'student', fullName: 'Ana Editada', email: 'ana@kellyacademy.com',
+      phone: '987654321', status: 'SUSPENDIDO', previousStatus: 'ACTIVO',
+    }).subscribe({ error: (error) => received = error });
+    http.expectOne(base + '/student').flush(dto);
+    http.expectOne(base + '/student/estado').flush({}, { status: 403, statusText: 'Forbidden' });
+    expect(received).toBeInstanceOf(StudentStatusUpdateError);
+    expect((received as Error).message).toContain('Los datos se guardaron');
+  });
   it('starts all enrollment changes together and reports partial failures without cancelling successes', () => {
     let failures: unknown;
     manage.saveCourses(student, ['new-a', 'new-b']).subscribe((result) => (failures = result));
@@ -131,6 +142,14 @@ describe('Teacher student API contracts', () => {
     expect(failures).toBeUndefined();
     requests.find((r) => r.request.method === 'DELETE')!.flush(null);
     expect(failures).toEqual([{ id: 'new-b', error: expect.objectContaining({ status: 400 }) }]);
+  });
+  it('never re-enrolls a withdrawn student or removes a completed enrollment', () => {
+    const withTerminal: Student = { ...student, enrollments: [
+      { id: 'done', courseId: 'done-course', status: 'COMPLETADA', finalGrade: 90 },
+      { id: 'left', courseId: 'left-course', status: 'ABANDONADA', finalGrade: null },
+    ] };
+    manage.saveCourses(withTerminal, ['left-course']).subscribe((result) => expect(result).toEqual([]));
+    http.expectNone((r) => r.url.startsWith(base));
   });
   it('does not recreate unchanged enrollments', () => {
     manage.saveCourses(student, ['old']).subscribe((result) => expect(result).toEqual([]));

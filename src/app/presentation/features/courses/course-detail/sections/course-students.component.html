@@ -16,6 +16,7 @@
   >
 </div>
 @if (canManage()) {
+  <app-course-attendance [workspace]="data" />
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
     <div class="rounded-2xl bg-white border border-app-border p-5">
       <p class="text-text-secondary text-xs">Total inscritos</p>
@@ -44,6 +45,7 @@
     [value]="query()"
     (input)="search($event)"
 /></label>
+@if (statusError(); as message) { <p role="alert" class="text-red-700 mb-4">{{ message }}</p> }
 <div class="rounded-2xl bg-white border border-app-border overflow-x-auto">
   <table class="w-full text-left">
     <thead class="bg-app-bg text-text-secondary text-[10px] uppercase tracking-wider">
@@ -97,6 +99,18 @@
                 [class.tag-orange]="student.status === 'RIESGO'"
                 >{{ statusLabels[student.status] }}</span
               >
+              @if (isAdmin() && (student.status === 'ACTIVA' || student.status === 'RIESGO')) {
+                <label class="block mt-2 text-xs">Cambiar estado
+                  <select class="block border rounded p-1 mt-1" [attr.aria-label]="'Cambiar estado de ' + student.name"
+                    [disabled]="busy() || !!statusBusy()" [value]="''" (change)="updateStatus(student, $any($event.target).value); $any($event.target).value = ''">
+                    <option value="">Selecciona…</option>
+                    @if (student.status === 'ACTIVA') { <option value="RIESGO">En seguimiento</option> }
+                    @if (student.status === 'RIESGO') { <option value="ACTIVA">Activo</option> }
+                    <option value="COMPLETADA">Completado</option>
+                    <option value="ABANDONADA">Retirado</option>
+                  </select>
+                </label>
+              }
             </td>
             <td class="p-4">
               @if (student.status === 'ACTIVA' || student.status === 'RIESGO') {

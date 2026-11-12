@@ -1,1 +1,10 @@
 <router-outlet></router-outlet>
+@if (feedback.loading()) {
+  <div class="request-loading" role="status" aria-label="Cargando"></div>
+}
+@if (feedback.message(); as message) {
+  <div class="global-toast" role="alert">
+    <span>{{ message }}</span>
+    <button type="button" aria-label="Cerrar aviso" (click)="feedback.dismiss()">×</button>
+  </div>
+}

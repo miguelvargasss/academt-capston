@@ -104,7 +104,8 @@ describe('Teacher student management', () => {
     const url = new URL(link.href);
     expect(url.host).toBe('wa.me');
     expect(url.pathname).toBe('/51999159716');
-    expect(url.searchParams.get('text')).toContain('Contraseña inicial: Initial?&=123');
+    expect(url.searchParams.get('text')).not.toContain('Initial?&=123');
+    expect(url.searchParams.get('text')).toContain('contraseña inicial por separado');
     expect(url.searchParams.get('text')).toContain(location.origin + '/login');
     expect(store).not.toHaveBeenCalled();
     fixture.nativeElement.querySelector('[aria-label="Cerrar tarjeta de credenciales"]').click();
@@ -149,15 +150,14 @@ describe('Teacher student management', () => {
       credentialsWhatsAppUrl(
         'Ana & Luis',
         'ana@kellyacademy.com',
-        'A?&=12345',
         '999159716',
         'https://academy.example/login',
       ),
     );
-    expect(url.searchParams.get('text')).toContain('A?&=12345');
+    expect(url.searchParams.get('text')).toContain('ana@kellyacademy.com');
     expect(url.searchParams.get('text')).toContain('Ana & Luis');
     expect(
-      credentialsWhatsAppUrl('Ana', 'a@b.c', '12345678', '123', 'https://academy.example/login'),
+      credentialsWhatsAppUrl('Ana', 'a@b.c', '123', 'https://academy.example/login'),
     ).toBe('');
   });
 });

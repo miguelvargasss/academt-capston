@@ -25,10 +25,13 @@ export class CourseContentComponent {
   readonly view = output<CourseResource>();
   readonly publication = output<PublicationCommand>();
   readonly currentWeek = output<CourseWeek>();
+  readonly reorderUnits = output<string[]>();
+  readonly reorderWeeks = output<{ unitId: string; ids: string[] }>();
   readonly query = signal('');
   readonly openWeeks = signal<Set<string>>(new Set());
   readonly labels = RESOURCE_LABELS;
   private initialized = false;
+  private dragged: { type: 'unit' | 'week'; id: string; unitId?: string } | null = null;
   readonly canManage = computed(() => this.workspace().canManage === true);
   readonly weeks = computed(() => this.workspace().units.flatMap((u) => u.weeks));
   readonly filtered = computed(() => {
@@ -90,5 +93,51 @@ export class CourseContentComponent {
   }
   hasSubmissions(id: string): boolean {
     return this.workspace().submissions.some((s) => s.taskId === id);
+  }
+  canReorder(): boolean {
+    return this.canManage() && !this.busy() && !this.query().trim();
+  }
+  moveUnit(id: string, direction: -1 | 1): void {
+    const ids = this.workspace().units.map((u) => u.id);
+    this.emitMoved(ids, id, ids.indexOf(id) + direction, (result) => this.reorderUnits.emit(result));
+  }
+  moveWeek(unit: CourseUnit, id: string, direction: -1 | 1): void {
+    const ids = this.workspace().units.find((u) => u.id === unit.id)?.weeks.map((w) => w.id) ?? [];
+    this.emitMoved(ids, id, ids.indexOf(id) + direction, (result) => this.reorderWeeks.emit({ unitId: unit.id, ids: result }));
+  }
+  dragStart(event: DragEvent, type: 'unit' | 'week', id: string, unitId?: string): void {
+    event.stopPropagation();
+    if (!this.canReorder()) { event.preventDefault(); return; }
+    this.dragged = { type, id, unitId };
+    event.dataTransfer?.setData('text/plain', id);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+  }
+  dragOver(event: DragEvent, type: 'unit' | 'week', unitId?: string): void {
+    if (this.dragged?.type !== type || (type === 'week' && this.dragged.unitId !== unitId)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  drop(event: DragEvent, type: 'unit' | 'week', targetId: string, unitId?: string): void {
+    const dragged = this.dragged;
+    if (!dragged || dragged.type !== type || (type === 'week' && dragged.unitId !== unitId)) return;
+    event.stopPropagation();
+    this.dragged = null;
+    event.preventDefault();
+    const ids = type === 'unit'
+      ? this.workspace().units.map((u) => u.id)
+      : this.workspace().units.find((u) => u.id === unitId)?.weeks.map((w) => w.id) ?? [];
+    this.emitMoved(ids, dragged.id, ids.indexOf(targetId), (result) => {
+      if (type === 'unit') this.reorderUnits.emit(result);
+      else if (unitId) this.reorderWeeks.emit({ unitId, ids: result });
+    });
+  }
+  dragEnd(): void { this.dragged = null; }
+  private emitMoved(ids: string[], id: string, destination: number, emit: (ids: string[]) => void): void {
+    const source = ids.indexOf(id);
+    if (!this.canReorder() || source < 0 || destination < 0 || destination >= ids.length || source === destination) return;
+    const reordered = [...ids];
+    reordered.splice(source, 1);
+    reordered.splice(destination, 0, id);
+    emit(reordered);
   }
 }

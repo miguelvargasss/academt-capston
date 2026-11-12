@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "angular",
+  "outputDirectory": "dist/frontend.kellyAcademy/browser",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.csr.html" }
+  ],
+  "headers": [
+    {
+      "source": "/runtime-config.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
+  ]
+}

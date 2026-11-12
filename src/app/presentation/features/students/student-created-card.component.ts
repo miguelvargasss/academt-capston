@@ -11,13 +11,13 @@ import { formatPhone } from './student-utils';
       <p class="eyebrow">CUENTA CREADA</p>
       <h2>{{ credentials().name }} ya puede ingresar</h2>
       <p>{{ credentials().email }} · +51 {{ formatPhone(credentials().phone) }}</p>
-      <small>Comparte su contraseña inicial antes de cerrar esta tarjeta.</small
+      <small>Comparte la contraseña inicial por un canal seguro y separado.</small
       ><a
         [href]="credentials().whatsAppUrl"
         target="_blank"
         rel="noopener noreferrer"
         referrerpolicy="no-referrer"
-        >Enviar credenciales por WhatsApp<app-course-icon name="external"
+        >Enviar datos de acceso por WhatsApp<app-course-icon name="external"
       /></a>
     </div>
     <button aria-label="Cerrar tarjeta de credenciales" (click)="closed.emit()">×</button>

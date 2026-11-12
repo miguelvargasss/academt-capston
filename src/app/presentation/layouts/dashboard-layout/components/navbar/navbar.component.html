@@ -26,18 +26,25 @@
       <kbd class="px-1.5 py-0.5 rounded bg-white border border-app-border text-[10px] text-text-muted font-mono shadow-2xs">⌘K</kbd>
     </div>
 
-    <!-- Botón de Notificaciones -->
-    <button
-      class="relative w-9 h-9 rounded-xl border border-app-border bg-white flex items-center justify-center text-text-secondary hover:text-text-main hover:bg-[#FAF9F6] transition-colors shadow-2xs"
-      title="Notificaciones"
-    >
-      <svg class="w-4 h-4 stroke-[1.8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-      </svg>
-      <!-- Punto rojo/naranja de aviso -->
-      <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary ring-2 ring-white"></span>
-    </button>
+    <div class="relative">
+      <button type="button" (click)="toggle()" [attr.aria-expanded]="opened()" aria-controls="notifications-panel"
+        class="relative w-9 h-9 rounded-xl border border-app-border bg-white flex items-center justify-center text-text-secondary hover:text-text-main hover:bg-[#FAF9F6] transition-colors shadow-2xs"
+        [attr.aria-label]="unread() === null ? 'Notificaciones' : 'Notificaciones: ' + unread() + ' sin leer'">
+        <svg class="w-4 h-4 stroke-[1.8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        @if (unread(); as total) { <span class="absolute -top-2 -right-2 min-w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center px-1">{{ total > 99 ? '99+' : total }}</span> }
+      </button>
+      @if (opened()) {
+        <div id="notifications-panel" class="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] bg-white border border-app-border rounded-xl shadow-lg p-4 z-50">
+          <h2 class="font-semibold text-sm">Notificaciones</h2>
+          @if (loading()) { <p role="status" class="text-xs mt-2">Cargando…</p> }
+          @if (error()) { <p role="alert" class="text-xs text-red-700 mt-2">{{ error() }}</p> }
+          @for (item of items(); track item.id) {
+            <div class="flex justify-between items-center gap-2 border-t border-app-border py-2 mt-2"><span class="text-xs">{{ item.titulo }}</span>@if (!item.leida) { <button type="button" [disabled]="!!marking()" (click)="read(item)" class="text-xs text-primary font-semibold">Marcar leída</button> }</div>
+          }
+          @if (!loading() && !items().length && !error()) { <p class="text-xs text-text-secondary mt-2">No tienes notificaciones.</p> }
+        </div>
+      }
+    </div>
 
     <!-- Separador vertical -->
     <div class="h-6 w-px bg-app-border"></div>

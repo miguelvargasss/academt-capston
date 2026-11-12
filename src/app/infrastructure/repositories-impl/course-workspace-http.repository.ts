@@ -46,6 +46,18 @@ export class CourseWorkspaceHttpRepository implements CourseWorkspaceRepository 
     });
   }
 
+  reorderUnits(courseId: string, ids: string[]): Observable<void> {
+    return this.http.put(`${this.base}/cursos/${encodeURIComponent(courseId)}/unidades/reordenar`, {
+      orden: ids.map((id, index) => ({ id, numero: index + 1 })),
+    }).pipe(map(() => undefined));
+  }
+
+  reorderWeeks(unitId: string, ids: string[]): Observable<void> {
+    return this.http.put(`${this.base}/unidades/${encodeURIComponent(unitId)}/semanas/reordenar`, {
+      orden: ids.map((id, index) => ({ id, numero: index + 1 })),
+    }).pipe(map(() => undefined));
+  }
+
   saveResource(c: SaveResourceCommand): Observable<void> {
     return this.save(`cursos/${encodeURIComponent(c.courseId)}/contenido/${c.kind}`, c.id, {
       semanaId: c.weekId,

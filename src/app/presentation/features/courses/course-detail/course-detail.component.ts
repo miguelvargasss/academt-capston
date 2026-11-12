@@ -242,6 +242,14 @@ export class CourseDetailComponent {
     if (this.canManage())
       this.perform(this.manageCourse.markCurrentWeek(week.id), 'Semana actualizada.');
   }
+  reorderUnits(ids: string[]): void {
+    if (this.canManage() && this.workspace())
+      this.perform(this.manageCourse.reorderUnits(this.workspace()!.course.id, ids), 'Orden de módulos actualizado.', true);
+  }
+  reorderWeeks(change: { unitId: string; ids: string[] }): void {
+    if (this.canManage())
+      this.perform(this.manageCourse.reorderWeeks(change.unitId, change.ids), 'Orden de semanas actualizado.', true);
+  }
   complete(resource: CourseResource): void {
     if (!this.canManage())
       this.perform(
@@ -253,7 +261,7 @@ export class CourseDetailComponent {
     if (!this.canManage())
       this.perform(this.manageCourse.sendSubmission(command), 'Entrega enviada correctamente.');
   }
-  private perform(request: Observable<void>, message: string): void {
+  private perform(request: Observable<void>, message: string, refreshOnError = false): void {
     if (this.busy()) return;
     this.busy.set(true);
     this.actionError.set(null);
@@ -270,6 +278,7 @@ export class CourseDetailComponent {
         this.actionError.set(
           apiErrorMessage(error, 'No se pudieron guardar los cambios. Inténtalo de nuevo.'),
         );
+        if (refreshOnError) this.refresh$.next();
       },
     });
   }

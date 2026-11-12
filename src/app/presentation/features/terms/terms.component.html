@@ -1,0 +1,60 @@
+<main class="min-h-screen bg-slate-50 px-4 py-8 sm:py-12">
+  <div class="mx-auto max-w-3xl">
+    <div class="mb-6 text-center">
+      <p class="text-sm font-bold tracking-wide text-primary">KELLY ACADEMY</p>
+      <h1 class="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">Términos y condiciones</h1>
+      <p class="mt-2 text-sm text-slate-600">Revisa las condiciones de uso para continuar en la plataforma.</p>
+    </div>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8" aria-labelledby="terms-card-title">
+      <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+        <div><h2 id="terms-card-title" class="text-lg font-bold text-slate-900">Acuerdo de uso de la plataforma</h2>
+          <p class="mt-1 text-xs text-slate-500">Versión del documento: {{ displayedVersion }}</p></div>
+        <button type="button" class="text-sm font-medium text-primary underline" (click)="logout()" [disabled]="saving()">Cerrar sesión</button>
+      </div>
+
+      @if (loading()) { <p class="py-6 text-sm text-slate-600" role="status">Consultando los términos…</p> }
+      @if (error(); as message) {
+        <div class="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-800" role="alert">{{ message }}
+          @if (!status()) { <button type="button" class="ml-2 font-semibold underline" (click)="load()" [disabled]="loading()">Reintentar</button> }
+        </div>
+      }
+      @if (status(); as current) {
+        @if (!versionMatches()) {
+          <div class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900" role="alert">La versión vigente en el servidor es diferente de la que muestra esta aplicación. Actualiza la página o la aplicación antes de continuar.</div>
+        } @else if (!rolesKnown()) {
+          <div class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900" role="alert">La aplicación no reconoce todos los roles de tu cuenta. Actualiza la página o la aplicación antes de continuar.</div>
+        } @else {
+          <div class="mt-5 max-h-[48vh] space-y-5 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700 sm:p-5" tabindex="0" aria-label="Contenido de los términos y condiciones">
+            <section><h3 class="font-bold text-slate-900">1. Uso de la plataforma</h3><p>Kelly Academy es un espacio de apoyo educativo para consultar cursos y recursos, participar en actividades, entregar trabajos y comunicarse con otros usuarios autorizados. Usa las funciones disponibles de acuerdo con tu rol y las indicaciones académicas aplicables.</p></section>
+            <section><h3 class="font-bold text-slate-900">2. Cuenta y acceso</h3><p>La cuenta es personal. Mantén tu contraseña bajo reserva, no compartas tus credenciales y comunica al equipo responsable cualquier acceso que no reconozcas. La información que proporciones debe ser veraz y estar actualizada.</p></section>
+            <section><h3 class="font-bold text-slate-900">3. Convivencia y contenidos</h3><p>Trata con respeto a estudiantes, docentes y demás participantes. No publiques contenido ofensivo, ilícito o que vulnere derechos de terceros. No intentes acceder a información ajena ni interferir con la seguridad o el funcionamiento del sistema.</p></section>
+            <section><h3 class="font-bold text-slate-900">4. Material académico</h3><p>Respeta la autoría y las condiciones de uso de los recursos, tareas y archivos. Utilízalos para tus actividades educativas y no los redistribuyas ni publiques sin contar con la autorización que corresponda.</p></section>
+            <section><h3 class="font-bold text-slate-900">5. Información y privacidad</h3><p>La plataforma maneja información de cuentas y actividades académicas. Comparte únicamente los datos necesarios para cada actividad, respeta la privacidad de las demás personas y utiliza los canales establecidos por la institución para consultas o incidencias sobre información personal.</p><p>La plataforma es utilizada por estudiantes menores y mayores de edad. La academia debe gestionar, según corresponda, las autorizaciones necesarias para los estudiantes menores de edad. La aceptación de estas condiciones no sustituye dichas autorizaciones ni acredita la identidad de un representante.</p></section>
+            @if (isStudent()) {
+              <section><h3 class="font-bold text-slate-900">6. Compromisos del estudiante</h3><p>Participa de forma respetuosa, presenta trabajos propios o debidamente atribuidos y revisa las instrucciones y fechas de tus actividades. No compartas datos, entregas o mensajes de otros estudiantes sin autorización.</p></section>
+            }
+            @if (isTeacher()) {
+              <section><h3 class="font-bold text-slate-900">{{ isStudent() ? '7' : '6' }}. Compromisos del docente</h3><p>Publica materiales que tengas derecho a utilizar, revisa su pertinencia y protege la información académica a la que accedes. Emplea la gestión de cursos, alumnos, evaluaciones y comunicaciones solo para fines educativos autorizados.</p></section>
+            }
+            @if (isAdmin()) {
+              <section><h3 class="font-bold text-slate-900">Responsabilidades de administración</h3><p>Gestiona cuentas, roles, recursos y configuraciones de manera responsable, limita el acceso a quienes corresponda y evita consultar, compartir o modificar información sin una finalidad autorizada.</p></section>
+            }
+            <section><h3 class="font-bold text-slate-900">Cambios y disponibilidad</h3><p>Las funciones y estas condiciones pueden actualizarse. Si se presenta una nueva versión, tendrás que revisarla antes de continuar. Ante problemas de acceso o uso, comunícate con el equipo responsable de la plataforma.</p></section>
+          </div>
+
+          @if (current.aceptado) {
+            <p class="mt-5 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800" role="status">Ya aceptaste esta versión de los términos para tus roles actuales.</p>
+            <button type="button" class="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white sm:w-auto" (click)="continue()">Continuar a la plataforma</button>
+          } @else {
+            <label class="mt-5 flex items-start gap-3 text-sm text-slate-800">
+              <input type="checkbox" name="acceptTerms" class="mt-1 h-4 w-4 accent-indigo-700" [(ngModel)]="confirmed" [disabled]="saving()" />
+              <span>He leído y acepto los términos y condiciones de uso para mis roles en Kelly Academy.</span>
+            </label>
+            <button type="button" class="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto" (click)="accept()" [disabled]="!confirmed || saving()">{{ saving() ? 'Registrando aceptación…' : 'Aceptar y continuar' }}</button>
+          }
+        }
+      }
+    </section>
+  </div>
+</main>

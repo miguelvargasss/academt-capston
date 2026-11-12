@@ -1,0 +1,31 @@
+<section class="rounded-2xl bg-white border border-app-border p-5 my-6 space-y-4" aria-labelledby="attendance-title">
+  <h3 id="attendance-title" class="font-semibold text-lg">Registrar asistencias</h3>
+  <p class="text-sm text-text-secondary">Selecciona una clase ya impartida y los estados que deseas registrar. El lote se guarda completo o se rechaza.</p>
+  <label class="grid gap-1 text-sm">Clase
+    <select class="border rounded-lg p-2" [(ngModel)]="classId" (ngModelChange)="load()" [disabled]="loading() || saving()">
+      <option value="">Selecciona una clase</option>
+      @for (item of classes(); track item.id) { <option [value]="item.id">{{ item.title }} · {{ item.startsAt }}</option> }
+    </select>
+  </label>
+  @if (loading()) { <p role="status">Cargando asistencias…</p> }
+  @if (error(); as message) { <p role="alert" class="text-red-700">{{ message }}</p> }
+  @if (notice(); as message) { <p role="status">{{ message }}</p> }
+  @if (ready()) {
+    <div class="overflow-x-auto"><table class="w-full text-left text-sm">
+      <thead><tr><th class="p-2">Estudiante</th><th class="p-2">Asistencia</th></tr></thead>
+      <tbody>
+        @for (student of students(); track student.id) {
+          <tr class="border-t"><td class="p-2">{{ student.name }}</td><td class="p-2">
+            @if (existing()[student.id]; as status) { <span>{{ status }} · Ya registrada</span> }
+            @else {
+              <select class="border rounded p-2" [attr.aria-label]="'Asistencia de ' + student.name" [value]="selection()[student.id] || ''" (change)="setStatus(student.id, $any($event.target).value)" [disabled]="saving()">
+                <option value="">Sin seleccionar</option><option value="PRESENTE">Presente</option><option value="AUSENTE">Ausente</option><option value="TARDE">Tarde</option><option value="JUSTIFICADO">Justificado</option>
+              </select>
+            }
+          </td></tr>
+        } @empty { <tr><td colspan="2" class="p-2">No hay estudiantes activos.</td></tr> }
+      </tbody>
+    </table></div>
+    <button type="button" class="rounded-lg bg-primary text-white px-4 py-2" (click)="save()" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar asistencias' }}</button>
+  }
+</section>

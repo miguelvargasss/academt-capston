@@ -1,0 +1,41 @@
+<section class="max-w-6xl mx-auto p-4 sm:p-8 space-y-6">
+  <div><p class="text-sm text-text-secondary">Comunicación</p><h1 class="text-2xl font-bold">Mensajes</h1><p class="text-sm text-text-secondary mt-1">Consulta tus conversaciones y responde a tus contactos.</p></div>
+  @if (error()) { <p role="alert" class="rounded-lg bg-red-50 text-red-800 p-3">{{ error() }}</p> }
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="bg-white border border-app-border rounded-2xl overflow-hidden">
+      <div class="flex items-center justify-between gap-2 p-4 border-b border-app-border"><h2 class="font-semibold">Conversaciones</h2><button type="button" (click)="startNew()" class="text-sm text-primary font-semibold">Nueva</button></div>
+      @if (showNew()) {
+        <form [formGroup]="newForm" (ngSubmit)="create()" class="p-4 space-y-3 border-b border-app-border">
+          <h3 class="text-sm font-semibold">Nueva conversación</h3>
+          @if (newError()) { <p role="alert" class="text-xs text-red-700">{{ newError() }}</p> }
+          <label class="block text-sm">Curso<select formControlName="cursoId" (change)="selectCourse()" class="block mt-1 w-full rounded-lg border border-app-border p-2"><option value="">Selecciona un curso</option>@for (course of courses(); track course.id) { <option [value]="course.id">{{ course.titulo }}</option> }</select></label>
+          <label class="block text-sm">Contacto<select formControlName="contactoId" class="block mt-1 w-full rounded-lg border border-app-border p-2"><option value="">{{ contactsLoading() ? 'Cargando…' : 'Selecciona un contacto' }}</option>@for (contact of contacts(); track contact.id) { <option [value]="contact.id">{{ contact.nombreCompleto }}</option> }</select></label>
+          <div class="flex gap-3"><button type="submit" [disabled]="newForm.invalid || creating() || contactsLoading()" class="text-sm text-primary font-semibold disabled:opacity-50">{{ creating() ? 'Abriendo…' : 'Abrir conversación' }}</button><button type="button" [disabled]="creating()" (click)="showNew.set(false)" class="text-sm">Cancelar</button></div>
+        </form>
+      }
+      @if (loading() && !conversations()) { <p role="status" class="p-4">Cargando…</p> }
+      @if (conversations(); as page) {
+        @for (conversation of page.content; track conversation.id) {
+          <button type="button" (click)="open(conversation)" [attr.aria-current]="selected()?.id === conversation.id ? 'true' : null" class="w-full text-left p-4 border-b border-app-border hover:bg-gray-50"><span class="font-semibold">{{ name(conversation) }}</span>@if (conversation.mensajesNoLeidos) { <span class="ml-2 text-xs text-primary">{{ conversation.mensajesNoLeidos }} sin leer</span> }<span class="block text-sm text-text-secondary">{{ conversation.asunto || conversation.cursoTitulo || 'Conversación' }}</span></button>
+        }
+        @if (!page.content.length) { <p class="p-4 text-sm text-text-secondary">No tienes conversaciones todavía.</p> }
+        <div class="flex justify-between gap-2 p-3 text-sm"><button type="button" [disabled]="loading() || page.number <= 0" (click)="load(page.number - 1)" class="disabled:opacity-50">Anterior</button><span>{{ page.totalPages ? page.number + 1 : 0 }} / {{ page.totalPages }}</span><button type="button" [disabled]="loading() || page.number + 1 >= page.totalPages" (click)="load(page.number + 1)" class="disabled:opacity-50">Siguiente</button></div>
+      }
+    </div>
+    <div class="md:col-span-2 bg-white border border-app-border rounded-2xl p-4 min-h-80 flex flex-col">
+      @if (selected(); as conversation) {
+        <h2 class="font-semibold border-b border-app-border pb-3">{{ name(conversation) }}</h2>
+        <p class="text-xs text-text-secondary mt-2">Se muestran los últimos 50 mensajes.</p>
+        @if (messageError()) { <p role="alert" class="text-sm text-red-700 mt-2">{{ messageError() }}</p> }
+        @if (messageLoading() && !messages().length) { <p role="status" class="p-4">Cargando mensajes…</p> }
+        <div class="flex-1 py-4 space-y-3" aria-live="polite">
+          @for (message of messages(); track message.id) { <article class="rounded-xl bg-gray-50 p-3"><p class="text-xs font-semibold">{{ message.remitenteNombreCompleto }}</p><p class="text-sm whitespace-pre-wrap mt-1">{{ message.cuerpo }}</p></article> }
+          @if (!messages().length && !messageLoading()) { <p class="text-sm text-text-secondary">Aún no hay mensajes.</p> }
+        </div>
+        @if (participant(conversation)) {
+          <form [formGroup]="form" (ngSubmit)="send()" class="flex items-end gap-2"><label class="flex-1 text-sm font-medium">Mensaje<textarea formControlName="cuerpo" rows="2" class="block mt-1 w-full rounded-lg border border-app-border p-2"></textarea></label><button type="submit" [disabled]="sending() || !form.controls.cuerpo.value.trim()" class="rounded-lg bg-primary px-4 py-2 text-white font-semibold disabled:opacity-50">{{ sending() ? 'Enviando…' : 'Enviar' }}</button></form>
+        }
+      } @else { <p class="text-sm text-text-secondary">Selecciona una conversación para ver sus mensajes.</p> }
+    </div>
+  </div>
+</section>

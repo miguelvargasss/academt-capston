@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
+import { DestroyRef, Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { UserProfile, UserRole } from '../../domain/models/user.model';
 import { AuthSession } from '../../domain/models/auth.model';
@@ -11,6 +11,8 @@ export class TokenStorageService {
   private readonly USER_KEY = 'kelly_user_profile';
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
+  private readonly destroy = inject(DestroyRef);
+  private expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Signals para estado reactivo del usuario
   private readonly _currentUser = signal<UserProfile | null>(this.loadStoredUser());
@@ -23,6 +25,10 @@ export class TokenStorageService {
     return !!t && this.isTokenValid(t);
   });
   public readonly userRole = computed<UserRole | null>(() => this._currentUser()?.role ?? null);
+  public readonly isAdmin = computed(() => {
+    const user = this._currentUser();
+    return user?.role === 'ADMINISTRADOR' || !!user?.roles?.includes('ADMINISTRADOR');
+  });
   public readonly roleLabel = computed<string>(() => {
     const role = this.userRole();
     if (role === 'DOCENTE') return 'Docente';
@@ -44,6 +50,11 @@ export class TokenStorageService {
     }
     return 'KA';
   });
+
+  constructor() {
+    this.scheduleExpiration(this._token());
+    this.destroy.onDestroy(() => this.cancelExpiration());
+  }
 
   public isTokenValid(token: string | null): boolean {
     if (!token) return false;
@@ -73,6 +84,7 @@ export class TokenStorageService {
 
     localStorage.setItem(this.ACCESS_TOKEN_KEY, session.accessToken);
     this._token.set(session.accessToken);
+    this.scheduleExpiration(session.accessToken);
 
     const primaryRole: UserRole = session.roles.includes('DOCENTE')
       ? 'DOCENTE'
@@ -88,11 +100,31 @@ export class TokenStorageService {
       email: session.email,
       fullName: fallbackName || formattedName,
       role: primaryRole,
+      roles: session.roles,
       status: 'ACTIVO',
       avatarUrl: undefined
     };
 
     localStorage.setItem(this.USER_KEY, JSON.stringify(profile));
+    this._currentUser.set(profile);
+  }
+
+  public updateProfile(update: Pick<UserProfile, 'id' | 'email' | 'fullName' | 'status' | 'avatarUrl'>): void {
+    const current = this._currentUser();
+    if (!current || current.id !== update.id) return;
+    const profile = { ...current, ...update };
+    if (this.isBrowser) localStorage.setItem(this.USER_KEY, JSON.stringify(profile));
+    this._currentUser.set(profile);
+  }
+
+  /** Aplica roles verificados por el servidor solo si la sesión que inició la consulta sigue vigente. */
+  public updateRoles(roles: UserRole[], expectedToken: string | null): void {
+    const current = this._currentUser();
+    if (!current || !roles.length || !expectedToken || this._token() !== expectedToken || !this.isTokenValid(expectedToken)) return;
+    const primaryRole: UserRole = roles.includes('DOCENTE') ? 'DOCENTE'
+      : roles.includes('ADMINISTRADOR') ? 'ADMINISTRADOR' : 'ESTUDIANTE';
+    const profile = { ...current, role: primaryRole, roles: [...roles] };
+    if (this.isBrowser) localStorage.setItem(this.USER_KEY, JSON.stringify(profile));
     this._currentUser.set(profile);
   }
 
@@ -108,12 +140,34 @@ export class TokenStorageService {
   }
 
   public clearSession(): void {
+    this.cancelExpiration();
     if (this.isBrowser) {
       localStorage.removeItem(this.ACCESS_TOKEN_KEY);
       localStorage.removeItem(this.USER_KEY);
     }
     this._token.set(null);
     this._currentUser.set(null);
+  }
+
+  private cancelExpiration(): void {
+    if (this.expiryTimer !== undefined) clearTimeout(this.expiryTimer);
+    this.expiryTimer = undefined;
+  }
+
+  private scheduleExpiration(token: string | null): void {
+    this.cancelExpiration();
+    if (!this.isBrowser || !token || !this.isTokenValid(token)) return;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const delay = Math.min(Math.max(payload.exp * 1000 - Date.now(), 0), 2_147_483_647);
+      this.expiryTimer = setTimeout(() => {
+        if (this._token() !== token) return;
+        if (!this.isTokenValid(token)) this.clearSession();
+        else this.scheduleExpiration(token);
+      }, delay);
+    } catch {
+      this.clearSession();
+    }
   }
 
   private loadStoredToken(): string | null {

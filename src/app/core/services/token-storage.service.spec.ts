@@ -23,6 +23,24 @@ describe('Sesión local y caducidad', () => {
   it.each([null, '', 'token', 'a.@@.b', token({}), token({ exp: 0 }), token({ exp: 'mañana' }), token({ exp: -1 })])('rechaza un token inválido o sin caducidad válida (%s)', value => {
     expect(TestBed.inject(TokenStorageService).isTokenValid(value)).toBe(false);
   });
+  it('actualiza la señal de autenticación al vencer sin esperar una petición HTTP', () => {
+    vi.useFakeTimers();
+    const storage = TestBed.inject(TokenStorageService);
+    storage.saveSession(session());
+    expect(storage.isAuthenticated()).toBe(true);
+    vi.advanceTimersByTime(3600000);
+    expect(storage.isAuthenticated()).toBe(false);
+    expect(storage.currentUser()).toBeNull();
+    expect(localStorage.getItem('kelly_access_token')).toBeNull();
+  });
+  it('sincroniza el perfil sin alterar el rol de la sesión', () => {
+    const storage = TestBed.inject(TokenStorageService);
+    storage.saveSession(session(['DOCENTE']));
+    storage.updateProfile({ id: 'user-test', email: 'ana@it.invalid', fullName: 'Ana Pérez', status: 'ACTIVO', avatarUrl: undefined });
+    expect(storage.currentUser()?.fullName).toBe('Ana Pérez');
+    expect(storage.currentUser()?.role).toBe('DOCENTE');
+    expect(JSON.parse(localStorage.getItem('kelly_user_profile')!).fullName).toBe('Ana Pérez');
+  });
   it('elimina token y perfil cuando expira una sesión previamente válida', () => {
     vi.useFakeTimers(); const storage = TestBed.inject(TokenStorageService); storage.saveSession(session());
     vi.setSystemTime(Date.now() + 3600001);

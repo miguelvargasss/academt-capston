@@ -33,6 +33,12 @@ export class ManageCourseUseCase {
   saveWeek(command: SaveStructureCommand) {
     return this.repository.saveWeek(command);
   }
+  reorderUnits(courseId: string, ids: string[]) {
+    return this.repository.reorderUnits(courseId, ids);
+  }
+  reorderWeeks(unitId: string, ids: string[]) {
+    return this.repository.reorderWeeks(unitId, ids);
+  }
   saveResource(command: SaveResourceCommand) {
     return this.repository.saveResource(command);
   }

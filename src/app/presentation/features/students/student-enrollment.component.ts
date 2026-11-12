@@ -30,6 +30,7 @@ export class StudentEnrollmentComponent implements OnInit, AfterViewInit {
   readonly selected = signal(new Set<string>());
   readonly query = signal('');
   readonly statusLabels = COURSE_STATUS_LABELS;
+  readonly enrollmentStatuses = computed(() => new Map(this.student().enrollments.map((e) => [e.courseId, e.status])));
   @ViewChild('dialog') private dialog!: ElementRef<HTMLDialogElement>;
   readonly current = computed(
     () =>
@@ -63,8 +64,14 @@ export class StudentEnrollmentComponent implements OnInit, AfterViewInit {
   available(c: StudentCourse): boolean {
     return c.status === 'ACTIVO' && c.enrolled < c.capacity;
   }
+  terminal(id: string): boolean {
+    const status = this.enrollmentStatuses().get(id);
+    return status === 'COMPLETADA' || status === 'ABANDONADA';
+  }
   toggle(id: string): void {
-    if (this.busy()) return;
+    const course = this.courses().find((item) => item.id === id);
+    if (this.busy() || this.terminal(id) || !course ||
+        (!this.current().has(id) && !this.selected().has(id) && !this.available(course))) return;
     this.selected.update((previous) => {
       const next = new Set(previous);
       next.has(id) ? next.delete(id) : next.add(id);

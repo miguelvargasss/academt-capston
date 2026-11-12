@@ -58,6 +58,12 @@ describe('Acceso a documentos privados', () => {
     req.flush(bytes);
     expect(received).toHaveBeenCalledWith(bytes);
   });
+  it('resuelve referencias antiguas de localhost usando el origen actual de la API', () => {
+    TestBed.inject(FileAccessService).resolve('http://localhost:8080' + path).subscribe();
+    TestBed.inject(HttpTestingController)
+      .expectOne(environment.apiUrl + path + '/acceso')
+      .flush({ url: 'https://files.example/temporary', nombre: 'archivo.pdf', mime: 'application/pdf', bytes: 1, expiraEnSegundos: 300 });
+  });
   it('no envía documentos externos al conversor privado', () => {
     const error = vi.fn();
     TestBed.inject(FileAccessService)

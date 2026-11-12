@@ -1,0 +1,19 @@
+<dialog #dialog aria-labelledby="calendar-event-title" (cancel)="cancel($event)" class="w-[min(95vw,36rem)] rounded-2xl border border-app-border p-0 backdrop:bg-black/50">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="p-6 space-y-4">
+    <header class="flex items-center justify-between gap-3"><h2 id="calendar-event-title" class="text-lg font-bold">{{ eventId() ? 'Editar evento' : 'Nuevo evento personal' }}</h2><button type="button" (click)="cancel()" [disabled]="busy()" aria-label="Cerrar" class="text-xl">×</button></header>
+    <p class="text-sm text-text-secondary">Las fechas y horas se guardan en la zona horaria de Lima.</p>
+    @if (loading()) { <p role="status">Cargando evento…</p> }
+    @if (error()) { <p role="alert" class="rounded-lg bg-red-50 text-red-800 p-3 text-sm">{{ error() }}</p> }
+    <fieldset [disabled]="busy() || loading() || !ready()" class="space-y-3">
+      <label class="block text-sm font-medium">Título<input formControlName="titulo" maxlength="200" required class="block w-full mt-1 rounded-lg border border-app-border p-2" />@if (form.controls.titulo.touched && (form.controls.titulo.invalid || !form.controls.titulo.value.trim())) { <span class="text-red-700">Ingresa un título.</span> }</label>
+      <label class="block text-sm font-medium">Tipo<select formControlName="tipo" class="block w-full mt-1 rounded-lg border border-app-border p-2"><option value="OTRO">Otro</option><option value="CLASE">Clase</option><option value="TAREA">Tarea</option><option value="EXAMEN">Examen</option><option value="TUTORIA">Tutoría</option><option value="REUNION">Reunión</option></select></label>
+      <div class="grid sm:grid-cols-2 gap-3"><label class="block text-sm font-medium">Inicio<input formControlName="inicio" type="datetime-local" required class="block w-full mt-1 rounded-lg border border-app-border p-2" />@if (form.controls.inicio.touched && form.controls.inicio.invalid) { <span class="text-red-700">Selecciona la fecha y hora.</span> }</label><label class="block text-sm font-medium">Fin (opcional)<input formControlName="fin" type="datetime-local" class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label></div>
+      <label class="block text-sm font-medium">Sala (opcional)<input formControlName="sala" maxlength="100" class="block w-full mt-1 rounded-lg border border-app-border p-2" /></label>
+      <label class="block text-sm font-medium">Descripción (opcional)<textarea formControlName="descripcion" rows="3" class="block w-full mt-1 rounded-lg border border-app-border p-2"></textarea></label>
+    </fieldset>
+    <footer class="flex flex-wrap justify-between gap-3">
+      @if (eventId()) { <button type="button" [disabled]="busy() || loading() || !ready()" (click)="remove()" class="text-red-700 text-sm font-semibold">{{ confirmingDelete() ? 'Confirmar eliminación' : 'Eliminar evento' }}</button> } @else { <span></span> }
+      <div class="flex gap-3"><button type="button" [disabled]="busy()" (click)="cancel()" class="text-sm">Cancelar</button><button type="submit" [disabled]="busy() || loading() || !ready()" class="rounded-lg bg-primary text-white px-4 py-2 font-semibold disabled:opacity-50">{{ busy() ? 'Guardando…' : 'Guardar' }}</button></div>
+    </footer>
+  </form>
+</dialog>

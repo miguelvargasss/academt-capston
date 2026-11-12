@@ -289,7 +289,7 @@
           <app-course-icon name="file" /><audio [src]="url()" controls preload="metadata"></audio>
         </div>
       } @else if (item.materialType === 'IMAGEN' && url()) {
-        <img class="resource-image" [src]="url()" [alt]="item.title" />
+        <app-file-attachment [url]="url()" [preview]="true" [label]="'Abrir ' + item.title" />
       } @else if (pdfEmbed(); as pdf) {
         <iframe
           class="pdf-frame"

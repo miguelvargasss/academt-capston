@@ -16,7 +16,7 @@
       }
       <p class="help intro">
         Selecciona los cursos que debe tener asignados. Al retirar uno, sus entregas y
-        calificaciones se conservan en el historial.
+        calificaciones se conservan en el historial. Las matrículas completadas o retiradas no se pueden modificar aquí.
       </p>
       <label class="search"
         ><app-course-icon name="search" /><input
@@ -33,6 +33,7 @@
               [checked]="selected().has(course.id)"
               [disabled]="
                 busy() ||
+                terminal(course.id) ||
                 (!current().has(course.id) && !selected().has(course.id) && !available(course))
               "
               (change)="toggle(course.id)"
@@ -45,7 +46,11 @@
               ><small>{{ course.enrolled }} / {{ course.capacity }} cupos ocupados</small>
             </div>
             <div class="badges">
-              @if (current().has(course.id) && selected().has(course.id)) {
+              @if (enrollmentStatuses().get(course.id) === 'COMPLETADA') {
+                <span class="tag">Completado</span>
+              } @else if (enrollmentStatuses().get(course.id) === 'ABANDONADA') {
+                <span class="tag">Retirado</span>
+              } @else if (current().has(course.id) && selected().has(course.id)) {
                 <span class="tag green">Inscrito</span>
               } @else if (current().has(course.id)) {
                 <span class="tag orange">Por retirar</span>

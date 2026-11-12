@@ -23,6 +23,8 @@ export interface CourseWorkspaceRepository {
   ): Observable<void>;
   saveUnit(command: SaveStructureCommand): Observable<void>;
   saveWeek(command: SaveStructureCommand): Observable<void>;
+  reorderUnits(courseId: string, ids: string[]): Observable<void>;
+  reorderWeeks(unitId: string, ids: string[]): Observable<void>;
   saveResource(command: SaveResourceCommand): Observable<void>;
   markCurrentWeek(id: string): Observable<void>;
   saveAnnouncement(command: SaveAnnouncementCommand): Observable<void>;

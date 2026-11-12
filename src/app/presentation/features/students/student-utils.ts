@@ -13,11 +13,10 @@ export function formatPhone(value: string | null): string {
 export function credentialsWhatsAppUrl(
   name: string,
   email: string,
-  password: string,
   phone: string,
   loginUrl: string,
 ): string {
   if (!/^\d{9}$/.test(phone)) return '';
-  const message = `Hola ${name}, te damos la bienvenida a Kelly Academy.\n\nCorreo: ${email}\nContraseña inicial: ${password}\nIngresar: ${loginUrl}\n\nUsa estos datos para tu primer acceso.`;
+  const message = `Hola ${name}, te damos la bienvenida a Kelly Academy.\n\nCorreo: ${email}\nIngresar: ${loginUrl}\n\nRecibirás tu contraseña inicial por separado.`;
   return `https://wa.me/51${phone}?text=${encodeURIComponent(message)}`;
 }

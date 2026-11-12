@@ -1,4 +1,5 @@
-import { Component, effect, inject, input, signal, computed } from '@angular/core';
+import { Component, DestroyRef, effect, inject, input, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PdfPreviewComponent } from '../pdf-preview/pdf-preview.component';
 import { FileAccess, FileAccessService } from '../../../../core/services/file-access.service';
 
@@ -14,7 +15,7 @@ import { FileAccess, FileAccessService } from '../../../../core/services/file-ac
         }
         @if (preview() && access(); as file) {
           @if (file.mime.startsWith('image/')) {
-            <img [src]="file.url" [alt]="label()" loading="lazy" />
+            <img [src]="file.url" [alt]="label()" loading="lazy" (error)="imageError()" (load)="imageLoaded()" />
           } @else if (documentPreview()) {
             @if (file.mime !== 'application/pdf') {
               <p>Vista PDF del documento. El archivo original conserva su formato.</p>
@@ -87,6 +88,8 @@ export class FileAttachmentComponent {
   readonly opening = signal(false);
   readonly error = signal<string | null>(null);
   private readonly files = inject(FileAccessService);
+  private readonly destroy = inject(DestroyRef);
+  private retriedImage = false;
   readonly documentPreview = computed(() => {
     const mime = this.access()?.mime ?? '';
     return (
@@ -100,6 +103,7 @@ export class FileAttachmentComponent {
   constructor() {
     effect((onCleanup) => {
       const url = this.url();
+      this.retriedImage = false;
       this.access.set(null);
       this.error.set(null);
       if (!url || !this.preview()) return;
@@ -115,6 +119,16 @@ export class FileAttachmentComponent {
         },
       });
       onCleanup(() => request.unsubscribe());
+    });
+  }
+  imageLoaded(): void { this.retriedImage = false; }
+  imageError(): void {
+    const url = this.url();
+    if (!url || this.retriedImage || !this.access()?.expiraEnSegundos) return;
+    this.retriedImage = true;
+    this.files.resolve(url).pipe(takeUntilDestroyed(this.destroy)).subscribe({
+      next: (file) => { if (this.url() === url) this.access.set(file); },
+      error: () => { if (this.url() === url) this.error.set('No se pudo actualizar la vista previa.'); },
     });
   }
   open(): void {

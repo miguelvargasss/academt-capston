@@ -39,3 +39,10 @@ export const docenteOnlyGuard: CanActivateFn = () => {
     ? true
     : inject(Router).createUrlTree(['/courses']);
 };
+
+export const adminGuard: CanActivateFn = () => {
+  const session = inject(TokenStorageService);
+  return session.isAuthenticated() && session.isAdmin()
+    ? true
+    : inject(Router).createUrlTree(['/dashboard']);
+};

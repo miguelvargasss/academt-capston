@@ -16,6 +16,7 @@ export class SidebarComponent {
 
   readonly currentUser = this.tokenStorage.currentUser;
   readonly userRole = this.tokenStorage.userRole;
+  readonly isAdmin = this.tokenStorage.isAdmin;
   readonly roleLabel = this.tokenStorage.roleLabel;
   readonly userInitials = this.tokenStorage.userInitials;
 

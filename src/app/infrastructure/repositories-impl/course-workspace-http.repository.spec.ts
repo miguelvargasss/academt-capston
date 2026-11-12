@@ -129,6 +129,18 @@ describe('Course workspace HTTP contracts', () => {
     update.flush({});
   });
 
+  it('persists complete reordered units and weeks with consecutive positions', () => {
+    repository.reorderUnits('course', ['u2', 'u1']).subscribe();
+    const units = http.expectOne(`${base}/cursos/course/unidades/reordenar`);
+    expect(units.request.method).toBe('PUT');
+    expect(units.request.body).toEqual({ orden: [{ id: 'u2', numero: 1 }, { id: 'u1', numero: 2 }] });
+    units.flush([]);
+    repository.reorderWeeks('unit', ['w2', 'w1']).subscribe();
+    const weeks = http.expectOne(`${base}/unidades/unit/semanas/reordenar`);
+    expect(weeks.request.body).toEqual({ orden: [{ id: 'w2', numero: 1 }, { id: 'w1', numero: 2 }] });
+    weeks.flush([]);
+  });
+
   it('sends grades with the backend field names and keeps zero as a valid grade', () => {
     repository.grade({ id: 'submission', grade: 0, feedback: 'Revisar' }).subscribe();
     const request = http.expectOne(`${base}/entregas/submission/calificar`);

@@ -7,6 +7,17 @@ import { TokenStorageService } from '../services/token-storage.service';
 import { environment } from '../config/environment';
 
 describe('JWT y proveedores de archivos', () => {
+  it('redirige a términos si el backend exige una nueva aceptación', () => {
+    const storage = { getAccessToken: () => 'token-de-prueba', clearSession: vi.fn() };
+    const router = { navigate: vi.fn() };
+    TestBed.configureTestingModule({ providers: [provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting(), { provide: TokenStorageService, useValue: storage }, { provide: Router, useValue: router }] });
+    TestBed.inject(HttpClient).get(environment.apiUrl + '/api/cursos').subscribe({ error: () => {} });
+    const controller = TestBed.inject(HttpTestingController);
+    controller.expectOne(() => true).flush({ codigo: 'TERMINOS_PENDIENTES' }, { status: 403, statusText: 'Forbidden' });
+    expect(router.navigate).toHaveBeenCalledWith(['/terminos']);
+    expect(storage.clearSession).not.toHaveBeenCalled();
+    controller.verify();
+  });
   it('un 401 del backend cierra sesión y redirige al login', () => {
     const storage = { getAccessToken: () => 'token-de-prueba', clearSession: vi.fn() };
     const router = { navigate: vi.fn() };
@@ -50,5 +61,18 @@ describe('JWT y proveedores de archivos', () => {
     external.flush({}, { status: 401, statusText: 'Unauthorized' });
     expect(storage.clearSession).not.toHaveBeenCalled();
     controller.verify();
+  });
+  it('no envía el JWT a una URL relativa de otro origen web', () => {
+    const storage = { getAccessToken: () => 'jwt-del-alumno', clearSession: vi.fn() };
+    TestBed.configureTestingModule({ providers: [
+      provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting(),
+      { provide: TokenStorageService, useValue: storage },
+      { provide: Router, useValue: { navigate: vi.fn() } },
+    ] });
+    const controller = TestBed.inject(HttpTestingController);
+    TestBed.inject(HttpClient).get('/asset-privado').subscribe();
+    const request = controller.expectOne('/asset-privado');
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush({}); controller.verify();
   });
 });

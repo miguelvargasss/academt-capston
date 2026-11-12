@@ -17,7 +17,11 @@ export class FileAccessService {
   reference(value: string): string | null {
     try {
       const url = new URL(value);
-      return url.origin === new URL(environment.apiUrl).origin &&
+      // Compatibilidad con referencias persistidas cuando APP_PUBLIC_URL tenía
+      // su valor local predeterminado. Otros orígenes siguen siendo externos.
+      const knownOrigin = url.origin === new URL(environment.apiUrl).origin ||
+        url.origin === 'http://localhost:8080';
+      return knownOrigin &&
         /^\/api\/cursos\/[\da-f-]{36}\/archivos\/[\da-f-]{36}$/.test(url.pathname)
         ? `${environment.apiUrl}${url.pathname}`
         : null;
@@ -51,14 +55,11 @@ export class FileAccessService {
     }
     if (!['https:', 'http:'].includes(url.protocol))
       return throwError(() => new Error('El enlace del archivo no es válido.'));
-    const backend = new URL(environment.apiUrl);
-    if (
-      url.origin === backend.origin &&
-      /^\/api\/cursos\/[\da-f-]{36}\/archivos\/[\da-f-]{36}$/.test(url.pathname)
-    ) {
+    const reference = this.reference(value);
+    if (reference) {
       return this.injector
         .get(HttpClient)
-        .get<FileAccess>(`${environment.apiUrl}${url.pathname}/acceso`);
+        .get<FileAccess>(`${reference}/acceso`);
     }
     const path = url.pathname.toLowerCase();
     const mime = /\.(png|jpe?g|gif|webp)$/.test(path)

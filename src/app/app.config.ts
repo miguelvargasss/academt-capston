@@ -5,6 +5,7 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { feedbackInterceptor } from './core/interceptors/feedback.interceptor';
 import {
   STUDENT_REPOSITORY,
   AUTH_REPOSITORY,
@@ -25,7 +26,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([feedbackInterceptor, authInterceptor])),
 
     // Dependency Inversion Principle (DIP): Inyección de abstracciones a implementaciones concretas
     { provide: STUDENT_REPOSITORY, useClass: StudentHttpRepository },

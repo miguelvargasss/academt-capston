@@ -44,17 +44,6 @@ export class DashboardComponent implements OnInit {
   upcomingTasks = signal<QuickTask[]>([]);
   todayClasses = signal<ScheduledClass[]>([]);
 
-  // Datos para el gráfico de barras semanal (inicializado a 0)
-  weeklyStudyData = [
-    { day: 'Lun', hours: 0, percentage: 0 },
-    { day: 'Mar', hours: 0, percentage: 0 },
-    { day: 'Mié', hours: 0, percentage: 0 },
-    { day: 'Jue', hours: 0, percentage: 0 },
-    { day: 'Vie', hours: 0, percentage: 0 },
-    { day: 'Sáb', hours: 0, percentage: 0 },
-    { day: 'Dom', hours: 0, percentage: 0 },
-  ];
-
   constructor() {
     const zone = inject(NgZone);
     afterNextRender(() =>

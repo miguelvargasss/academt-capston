@@ -8,10 +8,12 @@ import { GetCalendarEventsUseCase } from '../../../application/calendar/get-cale
 import { CalendarEvent } from '../../../domain/models/calendar-event.model';
 import { limaToday, mondayOf, shiftDate } from '../../../core/utils/academic-date';
 import { apiErrorMessage } from '../../../core/utils/api-error';
+import { CalendarEventEditorComponent } from './calendar-event-editor.component';
+import { TutoringManagerComponent } from './tutoring-manager.component';
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, BadgeComponent, RouterLink],
+  imports: [CommonModule, BadgeComponent, RouterLink, CalendarEventEditorComponent, TutoringManagerComponent],
   templateUrl: './calendar.component.html',
 })
 export class CalendarComponent {
@@ -22,6 +24,8 @@ export class CalendarComponent {
   readonly events = signal<CalendarEvent[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly editor = signal<{ id: string | null } | null>(null);
+  readonly showTutorings = signal(false);
   readonly labels: Record<CalendarEvent['status'], string> = {
     CONFIRMADA: 'Confirmada',
     EN_VIVO: 'En curso',

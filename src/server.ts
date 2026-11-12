@@ -24,9 +24,13 @@ const angularApp = new AngularNodeAppEngine();
  * ```
  */
 
-/**
- * Serve static files from /browser
- */
+// La configuración pública debe poder cambiarse sin volver a generar el bundle.
+app.get('/runtime-config.js', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(join(browserDistFolder, 'runtime-config.js'));
+});
+
+/** Serve static files from /browser. */
 app.use(
   express.static(browserDistFolder, {
     maxAge: '1y',
